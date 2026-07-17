@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>RAi Archive Neverending HTML Story</title>
+  <meta name="description" content="RAi Archive: #isukiri #raicandish">
+  
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; }
+    
+    :root {
+      --primary-green:  #2d9a7a;
+      --primary-blue:   #2b6fa3;
+      --primary-red:    #c73c3c;
+      --primary-yellow: #d4a030;
+      --gold:           #b8860b;
+      --silver:         #c0c0c0;
+      --bg-gold:        #1a1410;
+      --bg-silver:      #1a1a1a;
+      --text-white:     #f5f5f5;
+      --text-dim:       #888888;
+      --mono:           'Courier New', ui-monospace, monospace;
+      --radius:         6px;
+    }
+    
+    body {
+      background: var(--bg-gold);
+      color: var(--text-white);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.5;
+      overflow: hidden;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      background: repeating-linear-gradient(to bottom, transparent 0, transparent 2px, rgba(0, 0, 0, 0.12) 2px, rgba(0, 0, 0, 0.12) 3px);
+    }
+    
+    #rain-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    
+    .app-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: 200px 1fr 160px;
+      grid-template-rows: 1fr 90px;
+      z-index: 10;
+      gap: 0;
+    }
+    
+    @media (max-width: 768px) {
+      .app-container { grid-template-columns: 1fr; grid-template-rows: 1fr 80px; }
+      .sidebar { display: none; }
+      .sidebar.active { display: flex; position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 100; }
+      .right-panel { display: none; }
+      .right-panel.active { display: flex; position: fixed; right: 0; top: 0; width: 100%; height: 100%; z-index: 100; }
+    }
+    
+    .sidebar {
+      grid-column: 1;
+      grid-row: 1;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(180deg, var(--bg-gold) 0%, var(--bg-silver) 100%);
+      box-shadow: 0 0 12px rgba(212, 160, 48, 0.6), inset 0 0 12px rgba(212, 160, 48, 0.2);
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      z-index: 50;
+    }
+    
+    .sidebar-header {
+      padding: 12px;
+      flex-shrink: 0;
+      background: rgba(0, 0, 0, 0.4);
+      box-shadow: inset 0 0 8px rgba(212, 160, 48, 0.2);
+    }
+    
+    .sidebar-logo {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    
+    .sidebar-tag {
+      font-size: 9px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+    }
+    
+    .sidebar-nav {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 10px;
+    }
+    
+    .nav-btn {
+      padding: 12px 10px;
+      background: rgba(45, 154, 122, 0.08);
+      border: none;
+      border-radius: var(--radius);
+      color: var(--text-white);
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 12px;
+      transition: all 0.2s ease;
+      text-align: left;
+      box-shadow: 0 0 8px rgba(45, 154, 122, 0.3);
+    }
+    
+    .nav-btn:hover {
+      background: rgba(45, 154, 122, 0.15);
+      box-shadow: 0 0 16px rgba(45, 154, 122, 0.5);
+    }
+    
+    .nav-btn.active {
+      background: rgba(45, 154, 122, 0.25);
+      color: var(--primary-yellow);
+      box-shadow: 0 0 20px rgba(212, 160, 48, 0.6);
+    }
+    
+    .nav-symbol {
+      display: inline-block;
+      margin-right: 8px;
+      font-size: 14px;
+      width: 18px;
+      text-align: center;
+    }
+    
+    .sidebar-dock {
+      display: flex;
+      flex-direction: row;
+      gap: 4px;
+      padding: 10px;
+      flex-shrink: 0;
+      background: rgba(0, 0, 0, 0.3);
+      box-shadow: inset 0 0 8px rgba(43, 111, 163, 0.2);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .dock-btn {
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      padding: 0;
+      background: linear-gradient(135deg, rgba(43, 111, 163, 0.15), rgba(199, 60, 60, 0.08));
+      border: none;
+      border-radius: var(--radius);
+      color: var(--primary-blue);
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      box-shadow: 0 0 10px rgba(43, 111, 163, 0.4);
+    }
+    
+    .dock-btn:hover {
+      box-shadow: 0 0 20px rgba(212, 160, 48, 0.5), 0 0 10px rgba(43, 111, 163, 0.6);
+      transform: scale(1.05);
+    }
+    
+    .content-area {
+      grid-column: 2;
+      grid-row: 1;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(135deg, var(--bg-silver) 0%, var(--bg-gold) 100%);
+      box-shadow: 0 0 12px rgba(199, 60, 60, 0.6), inset 0 0 12px rgba(199, 60, 60, 0.2);
+      overflow: hidden;
+    }
+    
+    .content-header {
+      padding: 12px 16px;
+      flex-shrink: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: inset 0 0 8px rgba(199, 60, 60, 0.15), 0 4px 8px rgba(0,0,0,0.3);
+    }
+    
+    .content-title {
+      font-size: 13px;
+      color: var(--primary-yellow);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+    
+    .content-btn {
+      padding: 6px 12px;
+      font-size: 11px;
+      background: rgba(212, 160, 48, 0.12);
+      border: none;
+      border-radius: 4px;
+      color: var(--text-white);
+      cursor: pointer;
+      font-family: var(--mono);
+      transition: all 0.15s ease;
+      box-shadow: 0 0 8px rgba(212, 160, 48, 0.3);
+    }
+    
+    .content-btn:hover {
+      box-shadow: 0 0 16px rgba(212, 160, 48, 0.5);
+    }
+    
+    .content-btn:active {
+      background: rgba(212, 160, 48, 0.3);
+      box-shadow: 0 0 20px rgba(212, 160, 48, 0.6);
+      transform: scale(0.94);
+    }
+    
+    .content-scroll {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding: 16px;
+    }
+    
+    .content-scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+    
+    .content-scroll::-webkit-scrollbar-thumb {
+      background: var(--primary-yellow);
+      border-radius: 3px;
+    }
+    
+    .module {
+      display: none;
+    }
+    
+    .module.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .right-panel {
+      grid-column: 3;
+      grid-row: 1;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(180deg, var(--bg-silver) 0%, var(--bg-gold) 100%);
+      box-shadow: 0 0 12px rgba(45, 154, 122, 0.6), inset 0 0 12px rgba(45, 154, 122, 0.2);
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      z-index: 40;
+    }
+    
+    .right-panel-header {
+      padding: 10px;
+      flex-shrink: 0;
+      background: rgba(0, 0, 0, 0.4);
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      box-shadow: inset 0 0 8px rgba(45, 154, 122, 0.15), 0 2px 8px rgba(0,0,0,0.3);
+    }
+    
+    .right-panel-content {
+      flex: 1;
+      padding: 12px;
+      font-size: 11px;
+    }
+    
+    .rp-section {
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      box-shadow: inset 0 0 6px rgba(45, 154, 122, 0.1);
+    }
+    
+    .rp-label {
+      font-size: 9px;
+      color: var(--primary-yellow);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+    }
+    
+    .rp-item {
+      padding: 6px 8px;
+      background: rgba(45, 154, 122, 0.1);
+      box-shadow: 0 0 8px rgba(45, 154, 122, 0.25), inset 0 0 4px rgba(45, 154, 122, 0.1);
+      margin-bottom: 4px;
+      font-size: 11px;
+      color: var(--text-white);
+      border-radius: 3px;
+    }
+    
+    .dock-footer {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: linear-gradient(90deg, var(--bg-gold), var(--bg-silver));
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      z-index: 40;
+      box-shadow: 0 -2px 8px rgba(199, 60, 60, 0.3), inset 0 0 8px rgba(199, 60, 60, 0.1);
+    }
+    
+    .dock-footer-btn {
+      padding: 6px 12px;
+      font-size: 10px;
+      background: rgba(199, 60, 60, 0.12);
+      border: none;
+      border-radius: var(--radius);
+      color: var(--primary-red);
+      cursor: pointer;
+      font-family: var(--mono);
+      white-space: nowrap;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+      box-shadow: 0 0 8px rgba(199, 60, 60, 0.3);
+    }
+    
+    .dock-footer-btn:hover {
+      box-shadow: 0 0 16px rgba(199, 60, 60, 0.5);
+    }
+    
+    .dock-footer-btn:active {
+      background: rgba(199, 60, 60, 0.25);
+      transform: scale(0.94);
+    }
+    
+    .dock-footer-status {
+      margin-left: auto;
+      font-size: 9px;
+      color: var(--text-dim);
+      text-align: right;
+      flex-shrink: 0;
+    }
+    
+    /* ═══ WALKTHROUGH OVERLAY ═══ */
+    .walkthrough-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    .walkthrough-box {
+      background: linear-gradient(135deg, var(--bg-gold) 0%, var(--bg-silver) 100%);
+      border: none;
+      border-radius: var(--radius);
+      padding: 30px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 0 40px rgba(212, 160, 48, 0.8), 0 0 20px rgba(73, 217, 198, 0.4);
+      text-align: center;
+    }
+    
+    .walkthrough-title {
+      font-size: 18px;
+      color: var(--primary-yellow);
+      margin-bottom: 12px;
+      letter-spacing: 0.1em;
+    }
+    
+    .walkthrough-text {
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--text-white);
+      margin-bottom: 20px;
+    }
+    
+    .walkthrough-symbol {
+      font-size: 36px;
+      margin: 20px 0;
+      opacity: 0.8;
+    }
+    
+    .walkthrough-btns {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+    
+    .walkthrough-btn {
+      padding: 10px 20px;
+      font-size: 12px;
+      background: rgba(45, 154, 122, 0.2);
+      border: none;
+      border-radius: 4px;
+      color: var(--text-white);
+      cursor: pointer;
+      font-family: var(--mono);
+      transition: all 0.2s ease;
+      box-shadow: 0 0 12px rgba(45, 154, 122, 0.4);
+    }
+    
+    .walkthrough-btn:hover {
+      background: rgba(45, 154, 122, 0.35);
+      box-shadow: 0 0 20px rgba(45, 154, 122, 0.6);
+    }
+    
+    .walkthrough-btn.primary {
+      background: rgba(212, 160, 48, 0.25);
+      box-shadow: 0 0 12px rgba(212, 160, 48, 0.5);
+    }
+    
+    .walkthrough-btn.primary:hover {
+      background: rgba(212, 160, 48, 0.4);
+      box-shadow: 0 0 20px rgba(212, 160, 48, 0.7);
+    }
+    
+    /* AGENT CARD */
+    .agent-card {
+      margin-bottom: 12px;
+      padding: 12px;
+      background: linear-gradient(135deg, rgba(45, 154, 122, 0.1), rgba(43, 111, 163, 0.08));
+      border: none;
+      border-radius: var(--radius);
+      box-shadow: 0 0 12px rgba(45, 154, 122, 0.3), inset 0 0 6px rgba(45, 154, 122, 0.1);
+    }
+    
+    .agent-char {
+      font-size: 28px;
+      color: var(--primary-yellow);
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    
+    .agent-name {
+      font-size: 11px;
+      color: var(--primary-yellow);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    
+    .agent-phonetic {
+      font-size: 10px;
+      color: var(--primary-blue);
+      margin-bottom: 6px;
+    }
+    
+    .agent-meaning {
+      font-size: 11px;
+      color: var(--text-white);
+      line-height: 1.5;
+      margin-bottom: 6px;
+    }
+    
+    .agent-script {
+      display: inline-block;
+      background: rgba(199, 60, 60, 0.1);
+      padding: 2px 6px;
+      margin-right: 4px;
+      border-radius: 3px;
+      font-size: 9px;
+      color: var(--primary-red);
+      margin-bottom: 4px;
+      box-shadow: 0 0 6px rgba(199, 60, 60, 0.2);
+    }
+    
+    /* DEAD END */
+    .encounter-banner {
+      text-align: center;
+      padding: 12px;
+      margin-bottom: 12px;
+      background: rgba(199, 60, 60, 0.08);
+      color: var(--primary-red);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      animation: encounterFlash 0.6s ease;
+      border-radius: var(--radius);
+      box-shadow: 0 0 12px rgba(199, 60, 60, 0.4);
+    }
+    
+    @keyframes encounterFlash {
+      0% { opacity: 0; transform: scale(0.96); }
+      50% { opacity: 1; }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    
+    .composure-wrap {
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+      background: rgba(43, 111, 163, 0.08);
+      border-radius: var(--radius);
+      box-shadow: 0 0 10px rgba(43, 111, 163, 0.3), inset 0 0 6px rgba(43, 111, 163, 0.1);
+    }
+    
+    .composure-bar {
+      flex: 1;
+      height: 8px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: inset 0 0 4px rgba(0,0,0,0.3);
+    }
+    
+    .composure-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary-blue), var(--primary-green));
+      width: 0%;
+      transition: width 0.5s ease;
+      box-shadow: 0 0 8px rgba(45, 154, 122, 0.5);
+    }
+    
+    .scenario-card {
+      margin-bottom: 12px;
+      padding: 12px;
+      background: rgba(212, 160, 48, 0.08);
+      border-radius: var(--radius);
+      box-shadow: 0 0 10px rgba(212, 160, 48, 0.25);
+    }
+    
+    .scenario-attack {
+      padding: 8px;
+      background: rgba(199, 60, 60, 0.12);
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: var(--text-white);
+      border-radius: 3px;
+      box-shadow: 0 0 6px rgba(199, 60, 60, 0.2);
+    }
+    
+    .scenario-response {
+      padding: 8px;
+      background: rgba(45, 154, 122, 0.12);
+      font-size: 12px;
+      color: var(--text-white);
+      border-radius: 3px;
+      box-shadow: 0 0 6px rgba(45, 154, 122, 0.2);
+    }
+    
+    textarea, input {
+      background: rgba(0, 0, 0, 0.3);
+      border: none;
+      color: var(--text-white);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 10px;
+      border-radius: var(--radius);
+      resize: none;
+      box-shadow: 0 0 8px rgba(212, 160, 48, 0.3), inset 0 0 4px rgba(0,0,0,0.5);
+    }
+    
+    textarea:focus, input:focus {
+      outline: none;
+      box-shadow: 0 0 16px rgba(212, 160, 48, 0.5), inset 0 0 4px rgba(0,0,0,0.5);
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-dim);
+    }
+    
+    .empty-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+      opacity: 0.4;
+    }
+    
+    .empty-text {
+      font-size: 12px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="rain-canvas"></canvas>
+
+<div class="app-container">
+  
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">RAi Archive</div>
+      <div class="sidebar-tag">Est 22:08:86 · #isukiri</div>
+    </div>
+    
+    <div class="sidebar-nav">
+      <button class="nav-btn active" data-module="agents">
+        <span class="nav-symbol">☿</span> Agents
+      </button>
+      <button class="nav-btn" data-module="dead-end">
+        <span class="nav-symbol">♂</span> Dead End
+      </button>
+      <button class="nav-btn" data-module="ideas">
+        <span class="nav-symbol">♀</span> Ideas
+      </button>
+      <button class="nav-btn" data-module="cosmos">
+        <span class="nav-symbol">☉</span> Cosmos
+      </button>
+      <button class="nav-btn" data-module="companion">
+        <span class="nav-symbol">☽</span> Companion
+      </button>
+    </div>
+    
+    <div class="sidebar-dock">
+      <button class="dock-btn" title="Export" id="export-dock">DN</button>
+      <button class="dock-btn" title="Walkthrough" id="help-dock">?</button>
+      <button class="dock-btn" title="Settings" id="settings-dock">CFG</button>
+    </div>
+  </div>
+  
+  <div class="content-area">
+    <div class="content-header">
+      <button class="content-btn mobile-only" id="menu-toggle" style="display:none">☰</button>
+      <div class="content-title" id="content-title">Character Agents</div>
+      <div class="content-actions">
+        <button class="content-btn" id="content-new">+ New</button>
+        <button class="content-btn" id="content-search">Find</button>
+        <button class="content-btn mobile-only" id="ref-toggle" style="display:none">Ref</button>
+      </div>
+    </div>
+    
+    <div class="content-scroll">
+      <div class="module active" id="module-agents">
+        <div id="agents-list"></div>
+        <div class="empty-state" id="agents-empty">
+          <div class="empty-icon">[AGENTS]</div>
+          <div class="empty-text">Character agents from all scripts.<br>Click any card to learn its knowledge.</div>
+        </div>
+      </div>
+      
+      <div class="module" id="module-dead-end">
+        <div id="dead-end-container">
+          <div id="de-category-select" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;"></div>
+          <div id="de-scenario" style="display: none;">
+            <div id="de-encounter"></div>
+            <div class="composure-wrap">
+              <span>COMPOSURE</span>
+              <div class="composure-bar"><div class="composure-fill" id="de-composure-fill"></div></div>
+              <span id="de-composure-label">0%</span>
+            </div>
+            <div id="de-conversation"></div>
+            <div id="de-response-options" style="display: flex; flex-direction: column; gap: 6px; margin-top: 12px;"></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="module" id="module-ideas">
+        <div style="margin-bottom: 16px;">
+          <textarea id="idea-input" placeholder="Idea (use #tags)..." rows="5"></textarea>
+          <button class="content-btn" style="margin-top: 8px; width: 100%;" id="idea-save">Save</button>
+        </div>
+        <div id="ideas-list"></div>
+      </div>
+      
+      <div class="module" id="module-cosmos">
+        <div id="cosmos-canvas" style="width: 100%; height: 400px; background: rgba(0,0,0,0.3); border-radius: var(--radius); margin-bottom: 16px; box-shadow: 0 0 12px rgba(45,154,122,0.3);"></div>
+        <div id="cosmos-info"></div>
+      </div>
+      
+      <div class="module" id="module-companion">
+        <div id="companion-chat" style="display: flex; flex-direction: column; gap: 10px; height: 100%;">
+          <div id="companion-messages" style="flex: 1; overflow-y: auto; border-radius: var(--radius); padding: 12px; background: rgba(0,0,0,0.3); box-shadow: 0 0 10px rgba(43,111,163,0.3);"></div>
+          <div style="display: flex; gap: 6px;">
+            <input type="text" id="companion-input" placeholder="Ask..." style="flex: 1;">
+            <button class="content-btn" id="companion-send">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="right-panel">
+    <div class="right-panel-header">Context & Reference</div>
+    <div class="right-panel-content">
+      <div class="rp-section">
+        <div class="rp-label">Active Module</div>
+        <div id="rp-module-info" style="font-size: 12px; color: var(--primary-yellow);">Character Agents</div>
+      </div>
+      
+      <div class="rp-section">
+        <div class="rp-label">Alchemy Symbols</div>
+        <div style="font-size: 11px; line-height: 1.8;">
+          <div>☿ Mercury: communication</div>
+          <div>♀ Venus: ideas, capture</div>
+          <div>♂ Mars: action, mastery</div>
+          <div>☉ Sun: truth, knowledge</div>
+          <div>☽ Moon: reflection, guide</div>
+        </div>
+      </div>
+      
+      <div class="rp-section">
+        <div class="rp-label">Progress</div>
+        <div id="rp-progress" style="font-size: 11px;">
+          <div class="rp-item">Agents: -- studied</div>
+          <div class="rp-item">Dead End: -- mastered</div>
+          <div class="rp-item">Ideas: -- captured</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="dock-footer">
+    <button class="dock-footer-btn" id="dock-add">ADD ENTRY</button>
+    <button class="dock-footer-btn" id="dock-save">SAVE</button>
+    <button class="dock-footer-btn" id="dock-sync">SYNC</button>
+    <div class="dock-footer-status">v2.0 Polyglot · Offline · #isukiri</div>
+  </div>
+  
+</div>
+
+<!-- WALKTHROUGH OVERLAYS -->
+<div id="walkthrough-1" class="walkthrough-overlay" style="display: none;">
+  <div class="walkthrough-box">
+    <div class="walkthrough-title">Welcome to RAi Archive</div>
+    <div class="walkthrough-symbol">☿ ♀ ♂ ☉ ☽</div>
+    <div class="walkthrough-text">
+      This is a living knowledge OS where every character in every language is an agent.<br><br>
+      Each symbol represents a different mode of learning and mastery.
+    </div>
+    <div class="walkthrough-btns">
+      <button class="walkthrough-btn" onclick="nextWalkthrough()">Next</button>
+      <button class="walkthrough-btn" onclick="skipWalkthrough()">Skip</button>
+    </div>
+  </div>
+</div>
+
+<div id="walkthrough-2" class="walkthrough-overlay" style="display: none;">
+  <div class="walkthrough-box">
+    <div class="walkthrough-title">☿ Mercury — Character Agents</div>
+    <div class="walkthrough-symbol">☿</div>
+    <div class="walkthrough-text">
+      Click "Agents" to explore characters from all languages: Kanji, Runes, Cyrillic, Devanagari, Hebrew, Greek, Latin.<br><br>
+      Each character teaches you its phonetic, semantic, and etymological knowledge.
+    </div>
+    <div class="walkthrough-btns">
+      <button class="walkthrough-btn" onclick="nextWalkthrough()">Next</button>
+      <button class="walkthrough-btn" onclick="skipWalkthrough()">Skip</button>
+    </div>
+  </div>
+</div>
+
+<div id="walkthrough-3" class="walkthrough-overlay" style="display: none;">
+  <div class="walkthrough-box">
+    <div class="walkthrough-title">♂ Mars — Dead End Mastery</div>
+    <div class="walkthrough-symbol">♂</div>
+    <div class="walkthrough-text">
+      Learn conversational resilience. Train yourself to disarm manipulative arguments using Wu Wei responses.<br><br>
+      Available in English, Japanese, and Multilingual modes.
+    </div>
+    <div class="walkthrough-btns">
+      <button class="walkthrough-btn" onclick="nextWalkthrough()">Next</button>
+      <button class="walkthrough-btn" onclick="skipWalkthrough()">Skip</button>
+    </div>
+  </div>
+</div>
+
+<div id="walkthrough-4" class="walkthrough-overlay" style="display: none;">
+  <div class="walkthrough-box">
+    <div class="walkthrough-title">♀ Venus — Ideas Capture</div>
+    <div class="walkthrough-symbol">♀</div>
+    <div class="walkthrough-text">
+      Write down your thoughts. Use #hashtags to organize them.<br><br>
+      Your ideas become part of your personal knowledge graph.
+    </div>
+    <div class="walkthrough-btns">
+      <button class="walkthrough-btn" onclick="nextWalkthrough()">Next</button>
+      <button class="walkthrough-btn" onclick="skipWalkthrough()">Skip</button>
+    </div>
+  </div>
+</div>
+
+<div id="walkthrough-5" class="walkthrough-overlay" style="display: none;">
+  <div class="walkthrough-box">
+    <div class="walkthrough-title">☉ Sun — Cosmos Knowledge Graph</div>
+    <div class="walkthrough-symbol">☉</div>
+    <div class="walkthrough-text">
+      See how all your knowledge connects. Scripts, ideas, meanings, and language patterns form a living network.<br><br>
+      (Coming in Phase 2: visual knowledge map)
+    </div>
+    <div class="walkthrough-btns">
+      <button class="walkthrough-btn" onclick="nextWalkthrough()">Next</button>
+      <button class="walkthrough-btn" onclick="skipWalkthrough()">Skip</button>
+    </div>
+  </div>
+</div>
+
+<div id="walkthrough-6" class="walkthrough-overlay" style="display: none;">
+  <div class="walkthrough-box">
+    <div class="walkthrough-title">☽ Moon — Companion AI Guide</div>
+    <div class="walkthrough-symbol">☽</div>
+    <div class="walkthrough-text">
+      Chat with your personal knowledge assistant. Ask questions, request ideas, explore connections.<br><br>
+      (Rule-based now · Ollama-ready for local LLM later)
+    </div>
+    <div class="walkthrough-btns">
+      <button class="walkthrough-btn primary" onclick="completeWalkthrough()">Begin Archive</button>
+      <button class="walkthrough-btn" onclick="skipWalkthrough()">Skip</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════ THE SONG BRIDGE (v2.0) ════════════════
+// Cross-page communication system - auto-initializes
+(function() {
+  'use strict';
+  
+  const pageId = 'dosbot';
+  const isIframe = window.self !== window.top;
+  
+  const state = {
+    pageId: pageId,
+    timestamp: Date.now(),
+    agents: {},
+    seismic: {},
+    ideas: {},
+    messages: {},
+    lastSync: null
+  };
+
+  const Chorus = {
+    listeners: {},
+    
+    broadcast(channel, data) {
+      const message = {
+        from: pageId,
+        channel: channel,
+        data: data,
+        timestamp: Date.now()
+      };
+      
+      if (isIframe) {
+        window.parent.postMessage(
+          { type: 'song:broadcast', ...message },
+          '*'
+        );
+      }
+      
+      try {
+        localStorage.setItem(`song:${channel}`, JSON.stringify(message));
+      } catch(e) {}
+      
+      this.emit(channel, data);
+    },
+    
+    listen(channel, callback) {
+      if (!this.listeners[channel]) {
+        this.listeners[channel] = [];
+      }
+      this.listeners[channel].push(callback);
+    },
+    
+    emit(channel, data) {
+      if (this.listeners[channel]) {
+        this.listeners[channel].forEach(cb => {
+          try { cb(data); } catch(e) { console.error('[SONG] Error:', e); }
+        });
+      }
+    },
+    
+    getLatest(channel) {
+      try {
+        const msg = localStorage.getItem(`song:${channel}`);
+        return msg ? JSON.parse(msg) : null;
+      } catch(e) {
+        return null;
+      }
+    }
+  };
+
+  const Bridge = {
+    init() {
+      window.addEventListener('message', (e) => {
+        if (!e.data.type) return;
+        
+        if (e.data.type === 'song:broadcast') {
+          if (e.data.from !== pageId) {
+            Chorus.emit(e.data.channel, e.data.data);
+          }
+        }
+        
+        if (e.data.type === 'song:relay') {
+          if (e.data.from !== pageId) {
+            Chorus.emit(e.data.channel, e.data.data);
+          }
+        }
+      });
+      
+      window.addEventListener('storage', (e) => {
+        if (e.key && e.key.startsWith('song:')) {
+          const channel = e.key.replace('song:', '');
+          try {
+            const msg = JSON.parse(e.newValue);
+            if (msg.from !== pageId) {
+              Chorus.emit(channel, msg.data);
+            }
+          } catch(e) {}
+        }
+      });
+      
+      console.log('[SONG] Bridge initialized on DOS BOT');
+    }
+  };
+
+  const Verses = {
+    dosBot() {
+      console.log('[SONG] DOS BOT initialized');
+      
+      Chorus.listen('command:addAgent', (data) => {
+        console.log('[SONG] Add agent command:', data.id);
+        state.agents[data.id] = data;
+      });
+      
+      Chorus.listen('command:editAgent', (data) => {
+        console.log('[SONG] Edit agent command:', data.id);
+        if (state.agents[data.id]) {
+          state.agents[data.id] = { ...state.agents[data.id], ...data };
+        }
+      });
+      
+      window.dosbot = {
+        addAgent: (id, props) => {
+          Chorus.broadcast('command:addAgent', { id, ...props });
+        },
+        editAgent: (id, props) => {
+          Chorus.broadcast('command:editAgent', { id, ...props });
+        },
+        getAgents: () => state.agents,
+        broadcast: (data) => {
+          state.agents = { ...state.agents, ...data.agents };
+          Chorus.broadcast('dosbot:update', {
+            agents: state.agents,
+            module: 'character-agents',
+            timestamp: Date.now()
+          });
+        }
+      };
+    }
+  };
+
+  function init() {
+    Bridge.init();
+    Verses.dosBot();
+    
+    window.song = window.song || {};
+    window.song.state = state;
+    window.song.chorus = Chorus;
+    window.song.bridge = Bridge;
+    
+    console.log('[SONG] ✓ THE SONG IS LIVE ON DOS BOT');
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+
+// ════════════════ CHARACTER AGENTS ════════════════
+const CHARACTER_AGENTS = {
+  kanji: [
+    { char: '愛', name: 'AI', script: 'Kanji', phonetic: 'ai', meaning: 'Love — universal binding force', etymology: 'Heart + to think' },
+    { char: '光', name: 'HIKARI', script: 'Kanji', phonetic: 'hikari', meaning: 'Light — illumination, truth revealed', etymology: 'Fire + to open' },
+    { char: '水', name: 'MIZU', script: 'Kanji', phonetic: 'mizu', meaning: 'Water — flow, adaptation', etymology: 'Pictograph of water' },
+    { char: '火', name: 'HI', script: 'Kanji', phonetic: 'hi', meaning: 'Fire — transformation, energy', etymology: 'Pictograph of flames' },
+  ],
+  runes: [
+    { char: 'ᚠ', name: 'FEHU', script: 'Rune', phonetic: 'feh', meaning: 'Cattle/Wealth — abundance', etymology: 'Indo-European *pek- (to drive)' },
+    { char: 'ᚢ', name: 'URUZ', script: 'Rune', phonetic: 'ur', meaning: 'Auroch — primal strength', etymology: 'Beast of power and vigor' },
+  ],
+  cyrillic: [
+    { char: 'А', name: 'A', script: 'Cyrillic', phonetic: 'ah', meaning: 'Alpha — beginning', etymology: 'From Glagolitic Az (self)' },
+    { char: 'Б', name: 'BE', script: 'Cyrillic', phonetic: 'beh', meaning: 'Being — existence', etymology: 'From Glagolitic Buki' },
+  ],
+  devanagari: [
+    { char: 'अ', name: 'A', script: 'Devanagari', phonetic: 'ah', meaning: 'Aum base — primordial sound', etymology: 'Brahmi evolution' },
+    { char: 'म', name: 'MA', script: 'Devanagari', phonetic: 'mah', meaning: 'Mind — consciousness', etymology: 'Manas (thought)' },
+  ],
+};
+
+const DEAD_END_SCENARIOS = {
+  english: [
+    { attack: "You're just defending yourself", response: "That is your narrative." },
+    { attack: "I know what you're really thinking", response: "You've convinced yourself of that." },
+  ],
+  japanese: [
+    { attack: "あなたは自分を守っているだけです", response: "それはあなたのストーリーです。" },
+    { attack: "あなたが何を考えているかわかります", response: "あなた自身がそれに確信しました。" },
+  ],
+};
+
+let appState = {
+  currentModule: 'agents',
+  ideas: [],
+  walkthrough: 0
+};
+
+// ════════════════ RAINING RINGS ════════════════
+function initRain() {
+  const canvas = document.getElementById('rain-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  
+  let rings = [];
+  class Ring {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.radius = 0;
+      this.opacity = 0.25;
+      this.maxRadius = 50 + Math.random() * 50;
+      this.expandSpeed = 0.7 + Math.random() * 0.3;
+      this.color = ['#d4a030', '#b8860b', '#2d9a7a'][Math.floor(Math.random() * 3)];
+    }
+    update() {
+      this.radius += this.expandSpeed;
+      this.opacity = 0.25 * (1 - this.radius / this.maxRadius);
+    }
+    draw() {
+      ctx.strokeStyle = this.color.replace(')', `, ${this.opacity})`).replace('rgb', 'rgba');
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    isDead() { return this.radius > this.maxRadius; }
+  }
+  
+  function animate() {
+    ctx.fillStyle = '#1a1410';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    rings.forEach(ring => { ring.update(); ring.draw(); });
+    rings = rings.filter(r => !r.isDead());
+    if (Math.random() < 0.15) rings.push(new Ring(Math.random() * canvas.width, Math.random() * canvas.height));
+    requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+// ════════════════ WALKTHROUGH ════════════════
+let walkStep = 0;
+function showWalkthrough(step) {
+  document.querySelectorAll('.walkthrough-overlay').forEach(el => el.style.display = 'none');
+  if (step > 0 && step <= 6) {
+    document.getElementById(`walkthrough-${step}`).style.display = 'flex';
+  }
+  walkStep = step;
+}
+
+function nextWalkthrough() {
+  showWalkthrough(walkStep + 1);
+}
+
+function skipWalkthrough() {
+  document.querySelectorAll('.walkthrough-overlay').forEach(el => el.style.display = 'none');
+}
+
+function completeWalkthrough() {
+  skipWalkthrough();
+  localStorage.setItem('rai-walkthrough-done', 'true');
+}
+
+// ════════════════ MODULES ════════════════
+function switchModule(moduleName) {
+  document.querySelectorAll('.module').forEach(m => m.classList.remove('active'));
+  document.getElementById(`module-${moduleName}`).classList.add('active');
+  
+  document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelector(`[data-module="${moduleName}"]`).classList.add('active');
+  
+  const titles = {
+    agents: 'Character Agents — All Scripts',
+    'dead-end': 'Dead End — Mastery Across Languages',
+    ideas: 'Ideas Pad — Capture Knowledge',
+    cosmos: 'Cosmos — Knowledge Connections',
+    companion: 'Companion AI — Your Guide'
+  };
+  document.getElementById('content-title').textContent = titles[moduleName] || 'Archive';
+  document.getElementById('rp-module-info').textContent = moduleName.toUpperCase();
+  
+  appState.currentModule = moduleName;
+  localStorage.setItem('rai-state', JSON.stringify(appState));
+  
+  if (moduleName === 'agents') renderAgents();
+  if (moduleName === 'ideas') renderIdeas();
+  if (moduleName === 'dead-end') renderDeadEnd();
+}
+
+function broadcastAgents() {
+  if (window.song && window.song.chorus) {
+    const allAgents = {};
+    Object.entries(CHARACTER_AGENTS).forEach(([scriptType, agents]) => {
+      agents.forEach(agent => {
+        allAgents[`${agent.script}-${agent.char}`] = {
+          id: `${agent.script}-${agent.char}`,
+          char: agent.char,
+          name: agent.name,
+          meaning: agent.meaning,
+          script: agent.script,
+          phonetic: agent.phonetic,
+          etymology: agent.etymology
+        };
+      });
+    });
+    
+    window.song.chorus.broadcast('dosbot:update', {
+      agents: allAgents,
+      module: 'character-agents',
+      timestamp: Date.now()
+    });
+    console.log('[DOS BOT] Broadcasted', Object.keys(allAgents).length, 'agents to Son/Sun and Knew Paged');
+  }
+}
+
+function renderAgents() {
+  const list = document.getElementById('agents-list');
+  const empty = document.getElementById('agents-empty');
+  list.innerHTML = '';
+  let hasAgents = false;
+  
+  Object.entries(CHARACTER_AGENTS).forEach(([scriptType, agents]) => {
+    hasAgents = true;
+    agents.forEach(agent => {
+      const card = document.createElement('div');
+      card.className = 'agent-card';
+      card.innerHTML = `
+        <div class="agent-char">${agent.char}</div>
+        <div class="agent-name">${agent.name}</div>
+        <div class="agent-phonetic">${agent.phonetic}</div>
+        <div class="agent-meaning">${agent.meaning}</div>
+        <span class="agent-script">${agent.script}</span>
+        <div style="font-size: 10px; color: var(--text-dim); margin-top: 8px;">
+          Etymology: ${agent.etymology}
+        </div>
+      `;
+      list.appendChild(card);
+    });
+  });
+  empty.style.display = hasAgents ? 'none' : 'block';
+  
+  // Broadcast agents when rendered
+  broadcastAgents();
+}
+
+function renderDeadEnd() {
+  const select = document.getElementById('de-category-select');
+  select.innerHTML = '';
+  Object.keys(DEAD_END_SCENARIOS).forEach(lang => {
+    const btn = document.createElement('button');
+    btn.className = 'content-btn';
+    btn.textContent = `[${lang.toUpperCase()}]`;
+    btn.style.width = '100%';
+    btn.onclick = () => startDeadEndScenario(lang);
+    select.appendChild(btn);
+  });
+}
+
+function startDeadEndScenario(lang) {
+  const scenarios = DEAD_END_SCENARIOS[lang];
+  const scenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+  
+  const encounter = document.getElementById('de-encounter');
+  const conversation = document.getElementById('de-conversation');
+  const responseDiv = document.getElementById('de-response-options');
+  const scenario_div = document.getElementById('de-scenario');
+  
+  encounter.innerHTML = `<div class="encounter-banner">ENCOUNTER [${lang.toUpperCase()}]</div>`;
+  conversation.innerHTML = `<div class="scenario-card"><div class="scenario-attack">${scenario.attack}</div></div>`;
+  
+  responseDiv.innerHTML = `<button class="content-btn" style="width: 100%; background: rgba(45,154,122,0.15); box-shadow: 0 0 12px rgba(45,154,122,0.4);">${scenario.response}</button>`;
+  responseDiv.style.display = 'flex';
+  
+  scenario_div.style.display = 'block';
+  document.getElementById('de-category-select').style.display = 'none';
+  document.getElementById('de-composure-fill').style.width = '100%';
+  
+  responseDiv.querySelector('button').onclick = () => {
+    conversation.innerHTML += `<div class="scenario-card"><div class="scenario-response">${scenario.response}</div></div>`;
+    responseDiv.style.display = 'none';
+    setTimeout(() => {
+      const victory = document.createElement('div');
+      victory.className = 'scenario-card';
+      victory.style.boxShadow = '0 0 16px rgba(45,154,122,0.5)';
+      victory.innerHTML = `<div style="text-align: center; color: var(--primary-green); font-weight: bold;">DEAD END REACHED</div>`;
+      conversation.appendChild(victory);
+    }, 300);
+  };
+}
+
+function addIdea(text) {
+  if (!text.trim()) return;
+  appState.ideas.push({
+    id: Date.now(),
+    text,
+    created: new Date().toISOString()
+  });
+  localStorage.setItem('rai-state', JSON.stringify(appState));
+  renderIdeas();
+}
+
+function renderIdeas() {
+  const list = document.getElementById('ideas-list');
+  list.innerHTML = appState.ideas.map(idea => `
+    <div class="scenario-card">
+      <div style="font-size: 10px; color: var(--text-dim); margin-bottom: 6px;">
+        ${new Date(idea.created).toLocaleString()}
+      </div>
+      <div style="font-size: 12px; color: var(--text-white);">${idea.text.replace(/\n/g, '<br>')}</div>
+    </div>
+  `).join('');
+}
+
+function vibrate(duration = 20) {
+  if (navigator.vibrate) navigator.vibrate(duration);
+}
+
+// ════════════════ INITIALIZATION ════════════════
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('rai-state');
+  if (saved) appState = JSON.parse(saved);
+  
+  initRain();
+  renderAgents();
+  
+  // Initialize Song bridge
+  if (window.song && window.song.chorus) {
+    console.log('[DOS BOT] Song bridge is ready');
+    broadcastAgents();
+  }
+  
+  // Navigation
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      switchModule(btn.dataset.module);
+      vibrate(20);
+    });
+  });
+  
+  // Ideas
+  document.getElementById('idea-save').addEventListener('click', () => {
+    vibrate(20);
+    const text = document.getElementById('idea-input').value;
+    if (text.trim()) {
+      addIdea(text);
+      document.getElementById('idea-input').value = '';
+    }
+  });
+  
+  // TTS Ai
+  document.getElementById('companion-send').addEventListener('click', () => {
+    vibrate(20);
+    const input = document.getElementById('companion-input');
+    const text = input.value.trim();
+    if (!text) return;
+    
+    const msgs = document.getElementById('companion-messages');
+    msgs.innerHTML += `<div style="margin-bottom: 10px; padding: 8px; background: rgba(212,160,48,0.1); border-radius: 3px; box-shadow: 0 0 8px rgba(212,160,48,0.2);"><strong>YOU:</strong> ${text}</div>`;
+    input.value = '';
+    
+    setTimeout(() => {
+      msgs.innerHTML += `<div style="margin-bottom: 10px; padding: 8px; background: rgba(45,154,122,0.1); border-radius: 3px; box-shadow: 0 0 8px rgba(45,154,122,0.2);"><strong>READY?:</strong> This is not a good time, I am sorry.</div>`;
+      msgs.scrollTop = msgs.scrollHeight;
+    }, 300);
+    msgs.scrollTop = msgs.scrollHeight;
+  });
+  
+  // Help button
+  document.getElementById('help-dock').addEventListener('click', () => {
+    vibrate(25);
+    showWalkthrough(1);
+  });
+  
+  // Export
+  document.getElementById('export-dock').addEventListener('click', () => {
+    vibrate(30);
+    const html = document.documentElement.outerHTML;
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'rai-archive-book.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    vibrate([20, 10, 20]);
+  });
+  
+  // Network Sync (broadcast agents to Son/Sun and Knew Paged)
+  const syncButton = document.createElement('button');
+  syncButton.id = 'sync-dock';
+  syncButton.className = 'dock-btn';
+  syncButton.innerHTML = '⚡';
+  syncButton.title = 'Sync to Network (Son/Sun, Knew Paged)';
+  syncButton.addEventListener('click', () => {
+    vibrate(25);
+    broadcastAgents();
+    alert('✓ Agents synced to network!');
+  });
+  
+  const dock = document.querySelector('.sidebar-dock');
+  if (dock && !document.getElementById('sync-dock')) {
+    dock.appendChild(syncButton);
+  }
+  
+  // First-time walkthrough
+  if (!localStorage.getItem('rai-walkthrough-done')) {
+    showWalkthrough(1);
+  }
+  
+  // Prevent zoom
+  document.addEventListener('touchmove', e => {
+    if (e.touches.length > 1) e.preventDefault();
+  }, { passive: false });
+});
+</script>
+
+</body>
+</html>
