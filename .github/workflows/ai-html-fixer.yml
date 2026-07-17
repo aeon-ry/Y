@@ -1,0 +1,73 @@
+name: RAi HTML Fixer Bot
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '*.html'
+  workflow_dispatch:
+
+jobs:
+  fix-html:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Run AI Fixer
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python3 << 'SCRIPT'
+import os
+import json
+import subprocess
+from pathlib import Path
+
+API_KEY = os.environ.get('ANTHROPIC_API_KEY')
+HTML_FILES = list(Path('.').glob('*.html'))
+
+for html_file in HTML_FILES:
+    print(f"🔍 Analyzing {html_file}...")
+    
+    with open(html_file, 'r') as f:
+        content = f.read()
+    
+    response = subprocess.run([
+        'curl', '-s', 'https://api.anthropic.com/v1/messages',
+        '-H', f'api-key: {API_KEY}',
+        '-H', 'Content-Type: application/json',
+        '-d', json.dumps({
+            "model": "claude-opus-4-6",
+            "max_tokens": 4096,
+            "messages": [{
+                "role": "user",
+                "content": f"Fix this HTML for semantics, accessibility, and mobile responsiveness. Return ONLY the corrected HTML:\n\n{content[:6000]}"
+            }]
+        })
+    ], capture_output=True, text=True)
+    
+    try:
+        data = json.loads(response.stdout)
+        fixed_html = data['content'][0]['text']
+        with open(html_file, 'w') as f:
+            f.write(fixed_html)
+        print(f"✅ Fixed {html_file}")
+    except:
+        print(f"⚠️ Could not fix {html_file}")
+
+SCRIPT
+      
+      - name: Commit Changes
+        run: |
+          git config user.name "RAi-Bot"
+          git config user.email "rai@candish.dev"
+          git add *.html
+          git commit -m "🤖 RAi: Auto-fix HTML semantics & accessibility" || echo "No changes"
+          git push origin main
