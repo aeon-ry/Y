@@ -1,0 +1,7 @@
+node_modules/
+.DS_Store
+*.log
+tigerbrew/
+.agents/
+skills-lock.json
+update_env.sh
