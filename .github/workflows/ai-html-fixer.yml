@@ -1,11 +1,9 @@
 name: RAi HTML Fixer Bot
-
 on:
   push:
     branches: [main]
     paths:
       - '*.html'
-
 jobs:
   fix-html:
     runs-on: ubuntu-latest
@@ -19,6 +17,9 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
+      
+      - name: Install dependencies
+        run: pip install anthropic --break-system-packages
       
       - name: Run AI Fixer
         env:
