@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>RAiOS · #RAICANDISH · KURAI EDITION</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600;700&family=Noto+Serif+JP:wght@300;400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --k-bg: #111111; --k-surface: #1e1e1e; --k-raised: #272727; --k-border: #3a3a3a; --k-border-lo:#222222; --k-text: #d0d0c8; --k-text-dim: #666666; --k-text-lo: #444444; --red: #bc002d; --red-lo: #7a001d; --gold: #c8930a; --moss: #3a6b34; --cyan: #0a7a8c; --paper: #f0f0e4; --mono: 'IBM Plex Mono', monospace; --serif: 'Noto Serif JP', serif; --bridge-color: var(--k-text-dim);
+    }
+    *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: var(--k-bg); color: var(--k-text); font-family: var(--mono); font-size: 12px; line-height: 1.5; cursor: default; user-select: none; -webkit-font-smoothing: none; font-smooth: never; }
+    .system-nav-bar { position: sticky; top: 0; z-index: 4000; display: flex; gap: 8px; flex-wrap: wrap; padding: 8px 12px; background: rgba(17, 17, 17, 0.96); border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .system-nav-bar a { color: var(--k-text); text-decoration: none; padding: 4px 8px; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; border: 1px solid transparent; border-radius: 3px; }
+    .system-nav-bar a:hover, .system-nav-bar a.active { color: var(--gold); border-color: var(--gold); background: rgba(200, 147, 10, 0.14); }
+    #wallpaper { position: fixed; inset: 0; z-index: 0; background-color: var(--k-bg); background-image: linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(rgba(255,255,255,0.006) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.006) 1px, transparent 1px); background-size: 80px 80px, 80px 80px, 20px 20px, 20px 20px; }
+    #wallpaper::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 40%, rgba(0,0,0,0.6) 100%); }
+    #leaf-canvas { position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.25; }
+    #menubar { position: fixed; top: 0; left: 0; right: 0; height: 20px; z-index: 2000; background: var(--k-surface); border-bottom: 1px solid var(--k-border); display: flex; align-items: center; padding: 0 6px; gap: 0; }
+    .menu-item { padding: 0 8px; height: 20px; display: flex; align-items: center; font-size: 11px; letter-spacing: 0.3px; color: var(--k-text); cursor: pointer; white-space: nowrap; transition: background 0.08s; }
+    .menu-item:hover { background: var(--red); color: #fff; }
+    .menu-item.brand { color: var(--red); font-weight: 700; letter-spacing: 2px; font-size: 10px; padding-right: 14px; border-right: 1px solid var(--k-border); margin-right: 4px; }
+    #menubar-right { margin-left: auto; display: flex; align-items: center; gap: 0; }
+    #bridge-indicator { font-size: 9px; letter-spacing: 1px; padding: 0 8px; border-left: 1px solid var(--k-border); height: 20px; display: flex; align-items: center; gap: 4px; color: var(--k-text-dim); cursor: pointer; transition: color 0.3s; }
+    #bridge-indicator.connected { color: var(--moss); }
+    #bridge-indicator.connecting { color: var(--gold); }
+    #bridge-indicator.error { color: var(--red); }
+    #bridge-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; box-shadow: 0 0 4px currentColor; }
+    #rai-orb { width: 7px; height: 7px; border-radius: 50%; background: var(--red); box-shadow: 0 0 6px var(--red); margin: 0 8px; transition: background 0.3s, box-shadow 0.3s; flex-shrink: 0; }
+    #rai-orb.thinking { background: var(--gold); box-shadow: 0 0 10px var(--gold); }
+    #rai-orb.strategic { background: var(--moss); box-shadow: 0 0 10px var(--moss); }
+    #rai-orb.bridge { background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+    #clock { font-size: 11px; color: var(--k-text-dim); padding: 0 8px; border-left: 1px solid var(--k-border); height: 20px; display: flex; align-items: center; font-feature-settings: "tnum"; }
+    #desktop { position: fixed; top: 20px; left: 0; right: 0; bottom: 0; z-index: 2; }
+    .win { position: absolute; display: flex; flex-direction: column; border: 1px solid var(--k-border); box-shadow: inset 1px 1px 0 rgba(255,255,255,0.06), inset -1px -1px 0 rgba(0,0,0,0.4), 3px 3px 0 rgba(0,0,0,0.6); min-width: 200px; min-height: 140px; z-index: 10; pointer-events: all; }
+    .win-title { height: 20px; background: linear-gradient(180deg, #6a0018 0%, var(--red) 40%, #6a0018 100%); display: flex; align-items: center; padding: 0 4px 0 6px; cursor: move; flex-shrink: 0; border-bottom: 1px solid var(--red-lo); gap: 4px; }
+    .win-title-text { flex: 1; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px rgba(0,0,0,0.6); }
+    .win-btns { display: flex; gap: 2px; flex-shrink: 0; }
+    .wbtn { width: 14px; height: 14px; border: 1px solid rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; font-size: 8px; cursor: pointer; color: #fff; font-weight: 700; line-height: 1; transition: filter 0.1s; flex-shrink: 0; }
+    .wbtn:hover { filter: brightness(1.4); }
+    .wbtn.min-btn { background: var(--gold); }
+    .wbtn.close-btn { background: #555; }
+    .wbtn.full-btn { background: var(--moss); }
+    .win-menu { height: 18px; background: var(--k-raised); border-bottom: 1px solid var(--k-border-lo); display: flex; align-items: center; padding: 0 4px; gap: 0; flex-shrink: 0; }
+    .win-menu-item { padding: 0 6px; height: 18px; display: flex; align-items: center; font-size: 10px; color: var(--k-text-dim); cursor: pointer; }
+    .win-menu-item:hover { background: var(--red); color: #fff; }
+    .win-body { flex: 1; overflow-y: auto; overflow-x: hidden; background: var(--k-bg); color: var(--k-text); font-size: 11px; line-height: 1.6; padding: 8px 10px; }
+    .win-body::-webkit-scrollbar { width: 10px; }
+    .win-body::-webkit-scrollbar-track { background: var(--k-surface); border-left: 1px solid var(--k-border); }
+    .win-body::-webkit-scrollbar-thumb { background: var(--k-raised); border: 1px solid var(--k-border); }
+    .win-body::-webkit-scrollbar-thumb:hover { background: var(--red); }
+    .win.focused .win-title { background: linear-gradient(180deg, #9e0025 0%, #d4002f 40%, #9e0025 100%); }
+    .win.minimized { display: none; }
+    .win.fullscreen { top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; box-shadow: none; }
+    #terminal-app { position: fixed; top: 20px; left: 0; right: 0; bottom: 40px; background: #060606; border-top: 1px solid var(--k-border); display: flex; flex-direction: column; z-index: 1500; transform: translateY(100%); transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1); }
+    #terminal-app.active { transform: translateY(0); }
+    #term-tabbar { height: 20px; background: var(--k-surface); border-bottom: 1px solid var(--k-border); display: flex; align-items: flex-end; padding: 0 4px; gap: 2px; flex-shrink: 0; }
+    .term-tab { height: 18px; padding: 0 12px; font-size: 10px; letter-spacing: 0.5px; background: var(--k-bg); border: 1px solid var(--k-border); border-bottom: none; color: var(--k-text-dim); cursor: pointer; display: flex; align-items: center; transition: background 0.1s, color 0.1s; }
+    .term-tab.active { background: #060606; color: var(--k-text); border-bottom: 1px solid #060606; margin-bottom: -1px; }
+    .term-tab:hover:not(.active) { background: var(--k-raised); color: var(--k-text); }
+    #term-close-btn { margin-left: auto; height: 18px; padding: 0 10px; font-size: 10px; background: var(--red-lo); border: 1px solid var(--red); color: #fff; cursor: pointer; display: flex; align-items: center; letter-spacing: 0.5px; }
+    #term-close-btn:hover { background: var(--red); }
+    #term-output { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 10px 14px; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; }
+    .block { border-left: 2px solid var(--red); background: rgba(255,255,255,0.018); padding: 8px 12px; animation: blockIn 0.18s ease; }
+    .block.ronin { border-left-color: var(--gold); }
+    .block.shogun { border-left-color: var(--moss); }
+    .block.sys { border-left-color: var(--k-border); }
+    .block.bridge { border-left-color: var(--cyan); }
+    .block.brew { border-left-color: #8a5a00; }
+    .block.err { border-left-color: var(--red); background: rgba(188,0,45,0.06); }
+    @keyframes blockIn { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: translateX(0); } }
+    .block-cmd { font-size: 10px; color: var(--k-text-lo); letter-spacing: 0.5px; margin-bottom: 5px; }
+    .block-out { font-size: 12px; line-height: 1.65; color: #b8b8b0; white-space: pre-wrap; word-break: break-all; }
+    .block-out.sensei { color: var(--gold); font-family: var(--serif); font-style: italic; font-size: 13px; font-weight: 300; }
+    .block-out.strategic { color: #7ab873; }
+    .block-out.bridge-out { color: #0aafcc; }
+    .block-out.err-out { color: #ff4466; }
+    #input-row { border-top: 1px solid var(--k-border); background: var(--k-surface); height: 28px; display: flex; align-items: center; padding: 0 10px; gap: 8px; flex-shrink: 0; }
+    .ps-sym { color: var(--red); font-weight: 700; font-size: 13px; }
+    .ps-dir { color: var(--gold); font-size: 11px; }
+    .ps-rai { color: #0aafcc; font-size: 11px; }
+    #input-wrap { position: relative; flex: 1; display: flex; align-items: center; }
+    #ghost { position: absolute; color: var(--k-text-lo); font-size: 12px; pointer-events: none; white-space: nowrap; overflow: hidden; }
+    #shell { background: transparent; border: none; outline: none; color: var(--k-text); font-family: var(--mono); font-size: 12px; flex: 1; caret-color: var(--red); position: relative; z-index: 1; }
+    #conductor-tag { font-size: 9px; letter-spacing: 1px; padding: 1px 6px; background: var(--red-lo); color: var(--red); border: 1px solid var(--red); flex-shrink: 0; }
+    #conductor-tag.shogun { background: rgba(58,107,52,0.3); color: var(--moss); border-color: var(--moss); }
+    #conductor-tag.bridge { background: rgba(10,122,140,0.3); color: var(--cyan); border-color: var(--cyan); }
+    #taskbar { position: fixed; bottom: 0; left: 0; right: 0; height: 40px; z-index: 2000; background: var(--k-surface); border-top: 1px solid var(--k-border); display: flex; align-items: center; gap: 0; }
+    #start-btn { height: 40px; padding: 0 16px; background: var(--red); border-right: 1px solid var(--red-lo); display: flex; align-items: center; gap: 6px; cursor: pointer; flex-shrink: 0; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #fff; transition: background 0.1s; }
+    #start-btn:hover { background: #d4003a; }
+    #start-btn .logo { font-family: var(--serif); font-size: 16px; }
+    #taskbar-wins { flex: 1; display: flex; align-items: center; padding: 0 4px; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+    .tb-win-btn { height: 28px; padding: 0 10px; background: var(--k-raised); border: 1px solid var(--k-border); color: var(--k-text-dim); font-size: 10px; display: flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap; transition: background 0.1s, color 0.1s; max-width: 140px; overflow: hidden; letter-spacing: 0.3px; }
+    .tb-win-btn:hover { background: var(--k-border); color: var(--k-text); }
+    .tb-win-btn.active { background: var(--red); color: #fff; border-color: var(--red-lo); }
+    #quicklaunch { height: 40px; display: flex; align-items: center; border-left: 1px solid var(--k-border); padding: 0 4px; gap: 2px; }
+    .ql-btn { width: 32px; height: 28px; background: var(--k-raised); border: 1px solid var(--k-border); display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; transition: background 0.1s; }
+    .ql-btn:hover { background: var(--k-border); }
+    .ql-btn.ql-active { background: var(--red); border-color: var(--red-lo); }
+    #systray { height: 40px; display: flex; align-items: center; border-left: 1px solid var(--k-border); padding: 0 10px; gap: 8px; font-size: 10px; color: var(--k-text-dim); }
+    #sys-status { font-size: 9px; letter-spacing: 0.5px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #start-menu { position: fixed; bottom: 40px; left: 0; width: 240px; background: var(--k-surface); border: 1px solid var(--k-border); border-bottom: none; box-shadow: 3px -3px 0 rgba(0,0,0,0.5); z-index: 3000; display: none; }
+    #start-menu.open { display: block; }
+    .sm-header { background: linear-gradient(180deg, #6a0018 0%, var(--red) 100%); padding: 10px 12px 8px; font-family: var(--serif); font-size: 18px; font-weight: 300; color: #fff; letter-spacing: 2px; border-bottom: 1px solid var(--red-lo); }
+    .sm-header small { display: block; font-family: var(--mono); font-size: 9px; letter-spacing: 2px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+    .sm-section { padding: 4px 0; border-bottom: 1px solid var(--k-border-lo); }
+    .sm-item { height: 22px; padding: 0 12px; display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--k-text); cursor: pointer; }
+    .sm-item:hover { background: var(--red); color: #fff; }
+    .sm-item-icon { width: 14px; font-size: 12px; }
+    .sm-item-label { flex: 1; }
+    .sm-item-hint { font-size: 9px; color: var(--k-text-lo); }
+    .sm-item:hover .sm-item-hint { color: rgba(255,255,255,0.45); }
+    #boot { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; transition: opacity 0.5s, visibility 0.5s; }
+    #boot.gone { opacity: 0; visibility: hidden; }
+    #boot-logo { font-family: var(--serif); font-size: 42px; font-weight: 300; color: var(--red); letter-spacing: 10px; opacity: 0; animation: kFadeIn 0.6s 0.4s forwards; }
+    #boot-sub { font-size: 9px; letter-spacing: 4px; color: #444; opacity: 0; animation: kFadeIn 0.6s 0.9s forwards; }
+    #boot-brand { font-size: 8px; letter-spacing: 2px; color: #2a2a2a; opacity: 0; animation: kFadeIn 0.6s 1.0s forwards; }
+    #boot-post { font-size: 10px; color: #2a2a2a; line-height: 1.9; opacity: 0; animation: kFadeIn 0.6s 1.3s forwards; text-align: left; width: 400px; }
+    #boot-post span { color: #555; }
+    #boot-post .ok { color: #3a6b34; }
+    #boot-post .err { color: #bc002d; }
+    #boot-bar-wrap { width: 400px; height: 10px; border: 1px solid #2a2a2a; background: #050505; overflow: hidden; opacity: 0; animation: kFadeIn 0.3s 1.8s forwards; }
+    #boot-bar-fill { height: 100%; background: linear-gradient(90deg, var(--red-lo), var(--red)); width: 0%; animation: kFill 1.8s 2s forwards ease-out; }
+    #boot-status { font-size: 9px; color: #333; letter-spacing: 1px; opacity: 0; animation: kFadeIn 0.3s 2s forwards; }
+    @keyframes kFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes kFill { from { width: 0%; } to { width: 100%; } }
+    #notif-wrap { position: fixed; top: 28px; right: 4px; z-index: 4000; display: flex; flex-direction: column; gap: 2px; pointer-events: none; }
+    .notif { background: var(--k-surface); border: 1px solid var(--k-border); border-left: 3px solid var(--red); padding: 6px 10px; font-size: 10px; color: var(--k-text); max-width: 280px; line-height: 1.4; animation: notifIn 0.15s ease, notifOut 0.2s 3.5s forwards; box-shadow: 2px 2px 0 rgba(0,0,0,0.5); }
+    @keyframes notifIn { from { opacity:0; transform:translateX(10px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes notifOut { from { opacity:1; } to { opacity:0; } }
+    .brew-category { font-size: 9px; letter-spacing: 2px; color: var(--gold); margin: 8px 0 4px; }
+    .brew-install-btn { font-size: 9px; padding: 1px 6px; cursor: pointer; background: var(--red-lo); border: 1px solid var(--red); color: #fff; letter-spacing: 0.5px; }
+    .brew-install-btn:hover { background: var(--red); }
+    .fb-row { display: flex; align-items: center; gap: 8px; padding: 2px 4px; font-size: 11px; cursor: pointer; border-bottom: 1px solid var(--k-border-lo); }
+    .fb-row:hover { background: rgba(188,0,45,0.12); }
+    .fb-icon { width: 14px; flex-shrink: 0; text-align: center; }
+    .fb-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fb-size { color: var(--k-text-dim); font-size: 10px; width: 60px; text-align: right; flex-shrink: 0; }
+    .fb-path-bar { font-size: 10px; color: var(--gold); padding: 4px 8px; border-bottom: 1px solid var(--k-border); background: var(--k-raised); display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .fb-up-btn { color: var(--red); cursor: pointer; }
+    .fb-up-btn:hover { color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="system-nav-bar">
+    <a href="index.html">Home</a>
+    <a href="RAilingua.html">RAi Archive</a>
+    <a href="ninjastar.html">NinjaStar</a>
+    <a href="ry-rai-ri.html">RY/RAI/RI</a>
+    <a href="raios-v1.html">RAiOS v1.0</a>
+    <a href="kurai-edition.html" class="active">Kurai Edition</a>
+    <a href="kali-os.html">KALI OS</a>
+    <a href="raios-v4.html">RAiOS v4</a>
+    <a href="rai-archive.html">RAi Archive OS</a>
+  </div>
+  <div id="boot">
+    <div id="boot-logo">RAiOS</div>
+    <div id="boot-sub">KURAI EDITION · #RAICANDISH · v3.0</div>
+    <div id="boot-brand">#RYCANDISH · #RAiBOOT · #RAiBREW · #RAiDOS</div>
+    <div id="boot-post">
+      <span>CPU :</span> Detecting...<br>
+      <span>MEM :</span> Checking...<br>
+      <span>GPU :</span> Checking...<br>
+      <span>STG :</span> Scanning...<br>
+      <span>BREW:</span> <span id="boot-brew-status">Detecting package manager...</span><br>
+      <span>BRDG:</span> <span id="boot-bridge-status">Connecting to RAiBRIDGE ws://localhost:7777...</span>
+    </div>
+    <div id="boot-bar-wrap"><div id="boot-bar-fill"></div></div>
+    <div id="boot-status">LOADING RAiOS KERNEL...</div>
+  </div>
+  <div id="wallpaper"></div>
+  <canvas id="leaf-canvas"></canvas>
+  <div id="menubar">
+    <div class="menu-item brand">RAiOS</div>
+    <div class="menu-item" onclick="toggleStartMenu()">DOJO</div>
+    <div class="menu-item" onclick="openBIOS()">BIOS</div>
+    <div class="menu-item" onclick="openBrewManager()">RAiBREW</div>
+    <div class="menu-item" onclick="openFileBrowser('~')">FILES</div>
+    <div class="menu-item" onclick="openHardware()">HARDWARE</div>
+    <div class="menu-item" onclick="openTerminal()">SHELL</div>
+    <div class="menu-item" onclick="openNetwork()">NET</div>
+    <div id="menubar-right">
+      <div id="bridge-indicator" class="connecting" onclick="bridgeReconnect()" title="RAiBRIDGE status — click to reconnect">
+        <div id="bridge-dot"></div>
+        <span id="bridge-label">BRIDGE</span>
+      </div>
+      <div id="rai-orb" title="RAi conductor status"></div>
+      <div id="clock">00:00:00</div>
+    </div>
+  </div>
+  <div id="desktop"></div>
+  <div id="terminal-app">
+    <div id="term-tabbar">
+      <div class="term-tab active" data-tab="ronin">⚡ RONIN</div>
+      <div class="term-tab" data-tab="shogun">□ SHOGUN</div>
+      <div class="term-tab" data-tab="bridge">□ BRIDGE</div>
+      <div class="term-tab" data-tab="bash">□ BASH</div>
+      <div id="term-close-btn" onclick="closeTerminal()">▼ CLOSE</div>
+    </div>
+    <div id="term-output">
+      <div class="block sys">
+        <div class="block-cmd">RAiOS.boot() · #RAICANDISH · KURAI_EDITION v3.0</div>
+        <div class="block-out">RAiOS KERNEL LOADED · #RYCANDISH #RAICANDISH #RYANCANDISHDUAL-LLM: RONIN (fast reaction) + SHOGUN (strategic depth)RAiBRIDGE: Attempting connection to ws://localhost:7777RAiBREW: Self-bootstrapping package manager — initializing...
+Run "node raibridge.js" in iTerm2 if not connected.</div>
+      </div>
+    </div>
+    <div id="input-row">
+      <span class="ps-sym">λ</span>
+      <span class="ps-dir" id="ps-dir">~/dojo</span>
+      <span class="ps-rai" id="ps-rai">⬡ RAi</span>
+      <div id="input-wrap">
+        <span id="ghost"></span>
+        <input id="shell" type="text" spellcheck="false" autocomplete="off" placeholder="command or ask RAi... (Tab: autocomplete)">
+      </div>
+      <span id="conductor-tag">RONIN</span>
+    </div>
+  </div>
+  <div id="taskbar">
+    <div id="start-btn" onclick="toggleStartMenu()">
+      <span class="logo">理</span>
+      <span>RAiOS</span>
+    </div>
+    <div id="taskbar-wins"></div>
+    <div id="quicklaunch">
+      <div class="ql-btn" onclick="openTerminal()" title="Shell [Ctrl+Space]">□</div>
+      <div class="ql-btn" onclick="openBrewManager()" title="RAiBREW">□</div>
+      <div class="ql-btn" onclick="openFileBrowser('~')" title="Files">□</div>
+      <div class="ql-btn" onclick="openHardware()" title="Hardware">⚙️</div>
+      <div class="ql-btn" onclick="spawnWindow('SCROLL','',true)" title="Note">□</div>
+    </div>
+    <div id="systray">
+      <div id="rai-orb-tb" style="width:6px;height:6px;border-radius:50%;background:var(--red);box-shadow:0 0 5px var(--red);flex-shrink:0"></div>
+      <span id="sys-status">RAi: BOOT</span>
+    </div>
+  </div>
+  <div id="start-menu">
+    <div class="sm-header">理 RAiOS<small>#RAICANDISH · KURAI EDITION</small></div>
+    <div class="sm-section">
+      <div class="sm-item" onclick="openTerminal(); closeStart()"><span class="sm-item-icon">□</span><span class="sm-item-label">Dojo Shell</span><span class="sm-item-hint">Ctrl+Space</span></div>
+      <div class="sm-item" onclick="openBrewManager(); closeStart()"><span class="sm-item-icon">□</span><span class="sm-item-label">RAiBREW Manager</span></div>
+      <div class="sm-item" onclick="openFileBrowser('~'); closeStart()"><span class="sm-item-icon">□</span><span class="sm-item-label">File Browser</span></div>
+      <div class="sm-item" onclick="openHardware(); closeStart()"><span class="sm-item-icon">⚙️</span><span class="sm-item-label">Hardware Info</span></div>
+      <div class="sm-item" onclick="openNetwork(); closeStart()"><span class="sm-item-icon">□</span><span class="sm-item-label">Network</span></div>
+      <div class="sm-item" onclick="openProcesses(); closeStart()"><span class="sm-item-icon">□</span><span class="sm-item-label">Processes</span></div>
+      <div class="sm-item" onclick="openBIOS(); closeStart()"><span class="sm-item-icon">□</span><span class="sm-item-label">BIOS / System Info</span></div>
+    </div>
+    <div class="sm-section">
+      <div class="sm-item" onclick="spawnWindow('SCROLL','',true); closeStart()"><span class="sm-item-icon">□</span><span class="sm-item-label">Scroll / Notes</span></div>
+      <div class="sm-item" onclick="bridgeReconnect(); closeStart()"><span class="sm-item-icon">□</span><span class="sm-item-label">Reconnect Bridge</span></div>
+    </div>
+    <div class="sm-section">
+      <div class="sm-item" onclick="location.reload()"><span class="sm-item-icon">↺</span><span class="sm-item-label">Restart RAiOS</span></div>
+    </div>
+  </div>
+  <div id="notif-wrap"></div>
+  <script>
+    const BIOS = { save: (k, v) => { try { localStorage.setItem('RAi_'+k, JSON.stringify(v)); } catch(e){} }, load: (k, d) => { try { return JSON.parse(localStorage.getItem('RAi_'+k)) ?? d; } catch(e){ return d; } }, clear: () => { Object.keys(localStorage).filter(k=>k.startsWith('RAi_')).forEach(k=>localStorage.removeItem(k)); }};
+    let ws = null; let bridgeConnected = false; let bridgeSysInfo = null; let bridgeReconnectTimer = null; let bridgeMsgCallbacks = {}; let msgIdCounter = 0; const bridgeEl = document.getElementById('bridge-indicator'); const bridgeDot = document.getElementById('bridge-dot'); const bridgeLbl = document.getElementById('bridge-label');
+    function setBridgeStatus(state) { bridgeEl.className = state; const labels = { connected: 'BRIDGE ●', connecting: 'BRIDGE…', error: 'BRIDGE ✕' }; bridgeLbl.textContent = labels[state] || 'BRIDGE'; document.getElementById('boot-bridge-status').textContent = state === 'connected' ? 'RAiBRIDGE connected ✓' : state === 'connecting' ? 'Connecting to ws://localhost:7777...' : 'RAiBRIDGE offline — run: node raibridge.js'; }
+    function bridgeSend(obj) { if (ws && ws.readyState === 1) { ws.send(JSON.stringify(obj)); return true; } return false; }
+    function bridgeConnect() { if (ws && (ws.readyState === 0 || ws.readyState === 1)) return; setBridgeStatus('connecting'); try { ws = new WebSocket('ws://localhost:7777'); } catch(e) { setBridgeStatus('error'); scheduleBridgeReconnect(); return; } ws.onopen = () => { bridgeConnected = true; setBridgeStatus('connected'); notify('RAiBRIDGE', 'Connected. System scanning...', 'var(--cyan)'); bridgeSend({ type: 'hello' }); bridgeSend({ type: 'hardware' }); setTimeout(() => { bridgeSend({ type: 'brew_scan' }); }, 1500); }; ws.onclose = () => { bridgeConnected = false; setBridgeStatus('error'); sysEl.textContent = 'BRIDGE: OFFLINE'; scheduleBridgeReconnect(); }; ws.onerror = () => { bridgeConnected = false; setBridgeStatus('error'); }; ws.onmessage = (e) => { try { handleBridgeMsg(JSON.parse(e.data)); } catch(err) { console.error('Bridge parse error', err); } }; }
+    function scheduleBridgeReconnect() { clearTimeout(bridgeReconnectTimer); bridgeReconnectTimer = setTimeout(bridgeConnect, 5000); }
+    function bridgeReconnect() { if (ws) { try { ws.close(); } catch(e){} ws = null; } clearTimeout(bridgeReconnectTimer); bridgeConnect(); }
+    function handleBridgeMsg(msg) { if (msg.msgId && bridgeMsgCallbacks[msg.msgId]) { bridgeMsgCallbacks[msg.msgId](msg); delete bridgeMsgCallbacks[msg.msgId]; } switch(msg.type) { case 'hello_ack': { bridgeSysInfo = msg.sys; const s = msg.sys; sysEl.textContent = `${s.hostname} · ${s.cpus}C · ${s.totalMem}GB`; document.getElementById('ps-rai').textContent = `⬡ ${s.hostname}`; document.getElementById('boot-bridge-status').textContent = 'RAiBRIDGE connected ✓'; termPrint('bridge', `RAiBRIDGE connected.\nHost: ${s.hostname} · ${s.cpuModel}\nNode: ${s.node} · Platform: ${s.platform} ${s.arch}\nMemory: ${s.totalMem}GB total · ${s.freeMem}GB free\nHome: ${s.homedir}`, 'bridge-out'); document.getElementById('ps-dir').textContent = s.pwd || '~/dojo'; break; } case 'hardware': { updateHardwareWindow(msg); break; } case 'brew_scan': { updateBrewScan(msg); break; } case 'brew_scan_done': { const missing = msg.results.filter(r => !r.installed).length; const ok = msg.results.filter(r => r.installed).length; termPrint('brew', `RAiBREW scan complete: ${ok} installed · ${missing} missing`, 'bridge-out'); if (missing > 0) notify('RAiBREW', `${missing} tools missing. Open RAiBREW to install.`, 'var(--gold)'); break; } case 'brew_install': { handleBrewInstall(msg); break; } case 'ls': { updateFileBrowser(msg); break; } case 'file_read': { if (msg.content !== undefined) { spawnWindow('FILE: ' + (msg.path||'').split('/').pop(), msg.content.replace(/</g,'&lt;')); } else if (msg.error) { notify('FILE ERROR', msg.error, 'var(--red)'); } break; } case 'exec_out': { if (curBlock) { curBlock.textContent += msg.data; document.getElementById('term-output').scrollTop = 99999; } break; } case 'exec_done': { if (curBlock) { if (msg.code !== 0) curBlock.classList.add('err-out'); const exitLine = document.createElement('div'); exitLine.style.cssText = 'font-size:9px;color:var(--k-text-lo);margin-top:4px'; exitLine.textContent = `[exit ${msg.code}]`; curBlock.after(exitLine); } orbEl.className = ''; sysEl.textContent = 'RAi: READY'; curBlock = null; break; } case 'error': notify('BRIDGE ERROR', msg.msg, 'var(--red)'); break; } }
+    let hwWinEl = null; function updateHardwareWindow(msg) { if (!hwWinEl) return; const body = hwWinEl.querySelector('.win-body'); if (!body) return; const mb = Math.round(msg.mem_free/1024/1024); const mt = Math.round(msg.mem_total/1024/1024/1024); body.innerHTML = `<div style="color:var(--gold);margin-bottom:8px;letter-spacing:2px;font-size:10px">HARDWARE REPORT · RAiOS</div><div style="color:var(--k-text-dim);font-size:10px;line-height:2">CPU: <span style="color:var(--k-text)">${msg.cpu||'Unknown'}</span>MEM: <span style="color:var(--k-text)">${mt}GB total · ${mb}MB free</span>HOST: <span style="color:var(--k-text)">${msg.hostname||'Unknown'}</span>UPTIME: <span style="color:var(--k-text)">${Math.round((msg.uptime||0)/60)} min</span></div>`; }
+    function openHardware() { if (hwWinEl && document.getElementById(hwWinEl.id)) { focusWin(hwWinEl); return; } hwWinEl = spawnWindow('HARDWARE · RAiOS', '<div style="color:var(--k-text-dim)">Waiting for RAiBRIDGE...</div>'); hwWinEl.style.width = '420px'; hwWinEl.style.height = '320px'; if (bridgeConnected) bridgeSend({ type: 'hardware' }); bridgeSend({ type: 'disks' }); }
+    let brewWinEl = null; let brewToolEls = {}; let brewResults = {};
+    function openBrewManager() { if (brewWinEl && document.getElementById(brewWinEl.id)) { focusWin(brewWinEl); return; } brewWinEl = spawnWindow('RAiBREW · PACKAGE MANAGER', ''); brewWinEl.style.width = '500px'; brewWinEl.style.height = '400px'; const body = brewWinEl.querySelector('.win-body'); body.style.padding = '10px'; body.innerHTML = '<div style="color:var(--gold);letter-spacing:2px;font-size:10px;margin-bottom:6px">□ RAiBREW · SELF-BOOTSTRAPPING PACKAGE MANAGER</div><div style="font-size:10px;color:var(--k-text-dim);margin-bottom:8px">Scans system — installs what RAiOS needs via Homebrew/Tigerbrew.</div><div style="display:flex;gap:6px;margin-bottom:10px"><div onclick="brewScanAll()" style="cursor:pointer;padding:2px 10px;background:var(--red-lo);border:1px solid var(--red);font-size:10px;color:#fff">SCAN SYSTEM</div><div onclick="brewInstallMissing()" style="cursor:pointer;padding:2px 10px;background:rgba(58,107,52,0.3);border:1px solid var(--moss);font-size:10px;color:var(--moss)">INSTALL MISSING</div></div><div class="brew-bar-wrap"><div id="brew-global-bar" class="brew-bar-fill"></div></div><div id="brew-status-line" style="font-size:9px;color:var(--k-text-lo);margin:4px 0 8px;letter-spacing:0.5px">Ready. Click SCAN SYSTEM to begin.</div><div id="brew-grid" class="brew-grid"></div>'; brewToolEls = {}; brewScanAll(); }
+    function brewScanAll() { if (!bridgeConnected) { notify('RAiBREW', 'RAiBRIDGE not connected. Run: node raibridge.js', 'var(--red)'); return; } const grid = document.getElementById('brew-grid'); if (grid) { grid.innerHTML = ''; brewToolEls = {}; } const statusLine = document.getElementById('brew-status-line'); if (statusLine) statusLine.textContent = 'Scanning system...'; bridgeSend({ type: 'brew_scan' }); }
+    function updateBrewScan(msg) { const grid = document.getElementById('brew-grid'); if (!grid) return; const { tool, status } = msg; brewResults[tool] = { status }; if (!brewToolEls[tool]) { const el = document.createElement('div'); el.className = 'brew-tool checking'; el.id = `brew-tool-${tool}`; el.innerHTML = `<span class="brew-tool-name">${tool}</span><span class="brew-tool-status">…</span>`; grid.appendChild(el); brewToolEls[tool] = el; } const el = brewToolEls[tool]; el.className = `brew-tool ${status}`; if (status === 'ok') { el.innerHTML = `<span class="brew-tool-name">${tool}</span><span class="brew-tool-status">✓</span>`; } else if (status === 'missing') { el.innerHTML = `<span class="brew-tool-name">${tool}</span><span class="brew-tool-status" onclick="brewInstallOne('${tool}')" style="cursor:pointer;color:var(--red)">INSTALL</span>`; } const total = 20; const done = Object.keys(brewResults).length; const bar = document.getElementById('brew-global-bar'); if (bar) bar.style.width = Math.round((done/total)*100) + '%'; }
+    function brewInstallOne(tool) { if (!bridgeConnected) { notify('RAiBREW', 'No bridge connection.', 'var(--red)'); return; } bridgeSend({ type: 'brew_install', tool }); notify('RAiBREW', `Installing ${tool}...`, 'var(--gold)'); termPrint('brew', `RAiBREW: Installing ${tool}...`); }
+    function brewInstallMissing() { const missing = Object.entries(brewResults).filter(([,v])=>v.status==='missing').map(([k])=>k); if (!missing.length) { notify('RAiBREW', 'Nothing to install!', 'var(--moss)'); return; } missing.forEach((t,i) => setTimeout(() => brewInstallOne(t), i * 500)); }
+    function handleBrewInstall(msg) { const el = brewToolEls[msg.tool]; if (msg.status === 'done') { if (el) { el.className = 'brew-tool ok'; el.innerHTML = `<span class="brew-tool-name">${msg.tool}</span><span class="brew-tool-status">✓</span>`; } notify('RAiBREW', `${msg.tool} installed ✓`, 'var(--moss)'); brewResults[msg.tool] = { status: 'ok' }; } else if (msg.status === 'error') { if (el) el.className = 'brew-tool missing'; notify('RAiBREW', `${msg.tool}: ${msg.msg}`, 'var(--red)'); } }
+    let fbWinEl = null; let fbCurrentPath = '~'; let fbBodyEl = null; function openFileBrowser(startPath) { fbCurrentPath = startPath || '~'; if (fbWinEl && document.getElementById(fbWinEl.id)) { focusWin(fbWinEl); if (bridgeConnected) bridgeSend({ type: 'ls', path: fbCurrentPath }); return; } fbWinEl = spawnWindow('FILES · RAiOS', ''); fbWinEl.style.width = '420px'; fbWinEl.style.height = '360px'; const body = fbWinEl.querySelector('.win-body'); body.style.padding = '0'; body.innerHTML = `<div class="fb-path-bar"><span class="fb-up-btn" onclick="fbGoUp()">↑ UP</span><span id="fb-path-display" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${fbCurrentPath}</span></div><div id="fb-list" style="overflow-y:auto;height:calc(100% - 28px)"></div>`; fbBodyEl = body; if (bridgeConnected) bridgeSend({ type: 'ls', path: fbCurrentPath }); else { document.getElementById('fb-list').textContent = 'RAiBRIDGE not connected.'; } }
+    function fbGoUp() { const parts = fbCurrentPath.replace(/\/$/, '').split('/'); parts.pop(); fbCurrentPath = parts.join('/') || '/'; fbNavigate(fbCurrentPath); }
+    function fbNavigate(p) { fbCurrentPath = p; const pd = document.getElementById('fb-path-display'); if (pd) pd.textContent = p; if (bridgeConnected) bridgeSend({ type: 'ls', path: p }); }
+    function updateFileBrowser(msg) { const list = document.getElementById('fb-list'); if (!list) return; if (msg.error) { list.textContent = 'Error: ' + msg.error; return; } const pd = document.getElementById('fb-path-display'); if (pd) pd.textContent = msg.path; fbCurrentPath = msg.path; list.innerHTML = ''; if (!msg.files || !msg.files.length) { list.innerHTML = '<div style="padding:8px;color:var(--k-text-lo)">Empty directory</div>'; return; } const sorted = [...msg.files].sort((a,b) => { if (a.type==='dir' && b.type!=='dir') return -1; if (a.type!=='dir' && b.type==='dir') return 1; return a.name.localeCompare(b.name); }); sorted.forEach(f => { const row = document.createElement('div'); row.className = 'fb-row'; const icon = f.type === 'dir' ? '□' : getFileIcon(f.name); const size = f.size != null ? formatBytes(f.size) : ''; row.innerHTML = `<span class="fb-icon">${icon}</span><span class="fb-name">${f.name}</span><span class="fb-size">${size}</span>`; row.onclick = () => { if (f.type === 'dir') { fbNavigate(fbCurrentPath.replace(/\/$/, '') + '/' + f.name); } else { const fullPath = fbCurrentPath.replace(/\/$/, '') + '/' + f.name; bridgeSend({ type: 'file_read', path: fullPath }); } }; list.appendChild(row); }); }
+    function getFileIcon(name) { const ext = name.split('.').pop().toLowerCase(); const map = { html:'□', js:'□', py:'□', rb:'□', sh:'□', dmg:'□', zip:'□', rar:'□', gz:'□', tar:'□', exe:'⚙️', app:'□', png:'□', jpg:'□', gif:'□', svg:'□', mp4:'□', mp3:'□', pdf:'□', txt:'□', md:'□', json:'□', csv:'□' }; return map[ext] || '□'; }
+    function formatBytes(b) { if (b < 1024) return b + 'B'; if (b < 1048576) return (b/1024).toFixed(0) + 'K'; if (b < 1073741824) return (b/1048576).toFixed(1) + 'M'; return (b/1073741824).toFixed(1) + 'G'; }
+    function openBIOS() { const s = bridgeSysInfo; const content = s ? `RAiOS BIOS v3.0 · #RAICANDISH\n\nHOST: ${s.hostname}\nPLATFORM: ${s.platform} ${s.arch}\nRELEASE: ${s.release}\nCPU: ${s.cpuModel}\nCORES: ${s.cpus}\nMEM: ${s.totalMem}GB total · ${s.freeMem}GB free\nNODE: ${s.node}\nHOME: ${s.homedir}\nPWD: ${s.pwd}\nUPTIME: ${s.uptime} min\n\nBRIDGE: ws://localhost:7777 ✓\nRAiBREW: Self-bootstrapping\nRAiOS: v3.0 · KURAI EDITION` : `RAiOS BIOS v3.0 · #RAICANDISH\n\nRAiBRIDGE: NOT CONNECTED\n\nRun in iTerm2:\n  node raibridge.js\n\nThen click BRIDGE in menubar to reconnect.`; spawnWindow('BIOS · RAiOS', content).style.cssText += ';width:380px;height:300px'; }
+    function openNetwork() { const w = spawnWindow('NETWORK · RAiOS', 'Loading...'); w.style.cssText += ';width:460px;height:320px'; if (bridgeConnected) bridgeSend({ type: 'network' }); }
+    function openProcesses() { const w = spawnWindow('PROCESSES · RAiOS', 'Loading...'); w.style.cssText += ';width:460px;height:340px'; if (bridgeConnected) bridgeSend({ type: 'ps' }); }
+    function findOrSpawnWindow(title) { for (const [id, t] of openWins) { if (t === title) { const el = document.getElementById(id); if (el) { focusWin(el); return el; } } } const w = spawnWindow(title, 'Loading...'); w.style.cssText += ';width:460px;height:340px'; return w; }
+    function tick() { document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit',second:'2-digit'}); requestAnimationFrame(tick); }
+    tick();
+    const lc = document.getElementById('leaf-canvas'); const lx = lc.getContext('2d'); let leaves = []; function resizeLC() { lc.width = window.innerWidth; lc.height = window.innerHeight; } window.addEventListener('resize', resizeLC); resizeLC(); class Leaf { constructor(init) { this.x = Math.random()*lc.width; this.y = init ? Math.random()*lc.height : -20; this.sp=0.3+Math.random()*0.5; this.sz=3+Math.random()*5; this.dr=(Math.random()-0.5)*0.3; this.rot=Math.random()*Math.PI*2; this.rs=(Math.random()-0.5)*0.025; this.op=0.1+Math.random()*0.25; const p=['45,90,39','120,147,10','188,0,45','80,60,10']; this.rgb=p[Math.floor(Math.random()*p.length)]; } draw() { lx.save(); lx.translate(this.x,this.y); lx.rotate(this.rot); lx.globalAlpha=this.op; lx.fillStyle=`rgb(${this.rgb})`; lx.beginPath(); lx.ellipse(0,0,this.sz*0.35,this.sz,0,0,Math.PI*2); lx.fill(); lx.restore(); this.y+=this.sp; this.x+=this.dr+Math.sin(this.y*0.02)*0.25; this.rot+=this.rs; if(this.y>lc.height+20){this.x=Math.random()*lc.width; this.y=-20;} } } for(let i=0;i<25;i++) leaves.push(new Leaf(true)); (function anim(){lx.clearRect(0,0,lc.width,lc.height); leaves.forEach(l=>l.draw()); requestAnimationFrame(anim); })();
+    function notify(title, msg, color='var(--red)') { const wrap = document.getElementById('notif-wrap'); const n = document.createElement('div'); n.className = 'notif'; n.style.borderLeftColor = color; n.innerHTML = `<strong style="color:${color};letter-spacing:1px">${title}</strong><br>${msg}`; wrap.appendChild(n); setTimeout(() => n.remove(), 4000); }
+    let zIdx = 100; const desktop = document.getElementById('desktop'); const taskbarWins = document.getElementById('taskbar-wins'); let winCount = 0; const openWins = new Map();
+    function spawnWindow(title, content='', editable=false) { const id = 'win_' + (++winCount); const win = document.createElement('div'); win.className = 'win'; win.id = id; const col = 60 + (winCount % 6) * 22; const row = 40 + (winCount % 5) * 20; win.style.cssText = `width:360px;height:260px;top:${row}px;left:${col}px;z-index:${zIdx++}`; const safeContent = editable ? content : content.replace(/</g,'&lt;').replace(/&lt;div/g,'<div').replace(/&lt;span/g,'<span').replace(/&lt;\//g,'</'); win.innerHTML = `<div class="win-title"><div class="win-btns"><div class="wbtn min-btn" title="Minimize">_</div><div class="wbtn close-btn" title="Close">×</div><div class="wbtn full-btn" title="Fullscreen">□</div></div><div class="win-title-text">${title}</div></div><div class="win-menu"><div class="win-menu-item">File</div><div class="win-menu-item">Edit</div><div class="win-menu-item">View</div></div><div class="win-body" ${editable?'contenteditable="true"':''}>${editable ? content : safeContent}</div><div class="win-status"> <span class="win-status-seg">${title.slice(0,20)}</span><span class="win-status-seg solar-val">-- km/s</span><span>#RAICANDISH</span></div><div class="win-resize"></div>`; desktop.appendChild(win); focusWin(win); bindWin(win, id, title); addTaskbarBtn(id, title); openWins.set(id, title); return win; }
+    function bindWin(win, id, title) { const titleBar = win.querySelector('.win-title'); const body = win.querySelector('.win-body'); const [minBtn, closeBtn, fullBtn] = win.querySelectorAll('.wbtn'); const resizeGrip = win.querySelector('.win-resize'); win.addEventListener('pointerdown', () => focusWin(win), true); titleBar.onpointerdown = (e) => { if (e.target.classList.contains('wbtn')) return; win.style.zIndex = zIdx++; const ox=e.clientX-win.offsetLeft, oy=e.clientY-win.offsetTop; titleBar.setPointerCapture(e.pointerId); titleBar.onpointermove = (e) => { win.style.left = Math.max(0, e.clientX-ox) + 'px'; win.style.top = Math.max(20, Math.min(e.clientY-oy, window.innerHeight-60)) + 'px'; }; titleBar.onpointerup = () => titleBar.onpointermove = null; }; let lastTap = 0; minBtn.onpointerdown = () => { win.classList.add('minimized'); document.getElementById('tb_'+id)?.classList.remove('active'); }; closeBtn.onpointerdown = () => { const now = Date.now(); if (now - lastTap < 320) { BIOS.save('WIN_'+title+'_'+Date.now(), { title, content: body?.innerText }); notify('BIOS', `"${title.slice(0,20)}" saved.`, 'var(--moss)'); destroyWin(win, id); } else { lastTap = now; setTimeout(() => { if (Date.now()-lastTap >= 320) destroyWin(win, id); }, 340); } }; fullBtn.onpointerdown = () => win.classList.toggle('fullscreen'); resizeGrip.onpointerdown = (e) => { e.stopPropagation(); e.preventDefault(); const sx=e.clientX,sy=e.clientY,sw=win.offsetWidth,sh=win.offsetHeight; resizeGrip.setPointerCapture(e.pointerId); resizeGrip.onpointermove = (e) => { win.style.width = Math.max(200, sw+(e.clientX-sx))+'px'; win.style.height = Math.max(140, sh+(e.clientY-sy))+'px'; }; resizeGrip.onpointerup = () => resizeGrip.onpointermove = null; }; }
+    function focusWin(win) { document.querySelectorAll('.win').forEach(w => w.classList.remove('focused')); win.classList.add('focused'); win.style.zIndex = zIdx++; const id = win.id; document.querySelectorAll('.tb-win-btn').forEach(b => b.classList.remove('active')); document.getElementById('tb_'+id)?.classList.add('active'); }
+    function destroyWin(win, id) { win.remove(); document.getElementById('tb_'+id)?.remove(); openWins.delete(id); }
+    function addTaskbarBtn(id, title) { const btn = document.createElement('div'); btn.className = 'tb-win-btn active'; btn.id = 'tb_'+id; btn.textContent = title.length > 14 ? title.slice(0,14)+'…' : title; btn.onclick = () => { const win = document.getElementById(id); if (!win) return; if (win.classList.contains('minimized')) { win.classList.remove('minimized'); focusWin(win); } else if (win.classList.contains('focused')) { win.classList.add('minimized'); btn.classList.remove('active'); } else focusWin(win); }; taskbarWins.appendChild(btn); }
+    const termApp = document.getElementById('terminal-app'); const termOut = document.getElementById('term-output'); const shellEl = document.getElementById('shell'); const ghostEl = document.getElementById('ghost'); const condTag = document.getElementById('conductor-tag'); const orbEl = document.getElementById('rai-orb'); const sysEl = document.getElementById('sys-status'); let termOpen = false; let activeTab = 'ronin'; let cmdHistory = BIOS.load('CMD_HIST', []); let hIdx = -1; let curBlock = null; let cwd = '~'; const ALL_CMDS = ['brew scan','brew install','brew list','brew missing','ls','ls -la','pwd','cd ~','cd /','ps','ps aux','top','htop','disk','diskutil list','network','ifconfig','open ','cat ','file_read ','exec ','git status','git log --oneline','git pull','node --version','python3 --version','ruby --version','hardware','bios','bios clear','bios read','status','clear','help','exit','files','brew'];
+    function openTerminal() { termOpen = true; termApp.classList.add('active'); document.querySelector('.ql-btn')?.classList.add('ql-active'); setTimeout(() => shellEl.focus(), 80);} function closeTerminal() { termOpen = false; termApp.classList.remove('active'); document.querySelector('.ql-btn')?.classList.remove('ql-active'); }
+    function termPrint(type, text, cls='') { const b = document.createElement('div'); b.className = 'block ' + type; b.innerHTML = `<div class="block-cmd">${type.toUpperCase()} · ${new Date().toLocaleTimeString()}</div><div class="block-out ${cls}">${text}</div>`; termOut.appendChild(b); termOut.scrollTop = termOut.scrollHeight; return b.querySelector('.block-out'); }
+    document.querySelectorAll('.term-tab').forEach(tab => { tab.onclick = () => { document.querySelectorAll('.term-tab').forEach(t => t.classList.remove('active')); tab.classList.add('active'); activeTab = tab.dataset.tab; condTag.textContent = activeTab.toUpperCase(); condTag.className = activeTab === 'shogun' ? 'shogun' : activeTab === 'bridge' ? 'bridge' : ''; shellEl.focus(); }; });
+    shellEl.addEventListener('input', () => { const v = shellEl.value; ghostEl.textContent = v ? (ALL_CMDS.find(c => c.startsWith(v)) || '') : '';}); shellEl.addEventListener('keydown', async (e) => { if (e.key === 'Tab' && ghostEl.textContent) { e.preventDefault(); shellEl.value = ghostEl.textContent; ghostEl.textContent = ''; return; } if (e.key === 'ArrowUp') { e.preventDefault(); if (hIdx < cmdHistory.length-1) hIdx++; shellEl.value = cmdHistory[cmdHistory.length-1-hIdx] || ''; return; } if (e.key === 'ArrowDown') { e.preventDefault(); if (hIdx > 0) hIdx--; shellEl.value = cmdHistory[cmdHistory.length-1-hIdx] || ''; return; } if (e.key === 'Escape') { closeTerminal(); return; } if (e.key !== 'Enter' || !shellEl.value.trim()) return; const cmd = shellEl.value.trim(); shellEl.value = ''; ghostEl.textContent = ''; hIdx = -1; cmdHistory.push(cmd); if (cmdHistory.length > 100) cmdHistory.shift(); BIOS.save('CMD_HIST', cmdHistory); newBlock(cmd); await routeCmd(cmd);}); function newBlock(cmd) { const b = document.createElement('div'); b.className = 'block ' + (activeTab === 'bash' ? 'sys' : activeTab === 'bridge' ? 'bridge' : activeTab); b.innerHTML = `<div class="block-cmd">λ ${cmd} · ${new Date().toLocaleTimeString()}</div><div class="block-out">…</div>`; termOut.appendChild(b); termOut.scrollTop = termOut.scrollHeight; curBlock = b.querySelector('.block-out'); } function setOut(html, cls='') { if (curBlock) { curBlock.innerHTML = html; if (cls) curBlock.className = 'block-out '+cls; } termOut.scrollTop = termOut.scrollHeight; }
+    async function routeCmd(cmd) { const c = cmd.toLowerCase().trim(); if (c === 'clear') { termOut.innerHTML = ''; curBlock = null; return; } if (c === 'exit') { closeTerminal(); curBlock = null; return; } if (c === 'help') { setOut('RAiOS COMMANDS: brew scan — scan tools | brew install <pkg> | ls | cat <file> | open <path> | hardware | bios | files | clear | exit'); return; } if (c === 'status') { setOut(`RAiOS: ACTIVE · Bridge: ${bridgeConnected?'CONNECTED':'OFFLINE'} · RAiBREW: READY\nWindows open: ${openWins.size}`); return; } if (c === 'bios clear') { BIOS.clear(); setOut('BIOS storage cleared.'); return; } if (c === 'bios read') { const keys = Object.keys(localStorage).filter(k=>k.startsWith('RAi_')); setOut(keys.length ? keys.join('\n') : 'BIOS empty.'); return; } if (c === 'bios') { openBIOS(); setOut('BIOS window opened.'); return; } if (c === 'hardware') { openHardware(); setOut('Opening hardware panel...'); if (bridgeConnected) bridgeSend({ type: 'hardware' }); return; } if (c === 'network') { openNetwork(); if (bridgeConnected) bridgeSend({ type: 'network' }); setOut('Opening network panel...'); return; } if (c === 'disk' || c === 'disks') { if (bridgeConnected) { bridgeSend({ type: 'disks' }); setOut('Fetching disk info...'); } else { setOut('RAiBRIDGE not connected.', 'err-out'); } return; } if (c === 'ps') { openProcesses(); if (bridgeConnected) bridgeSend({ type: 'ps' }); setOut('Opening process list...'); return; } if (c === 'brew' || c === 'brew list') { openBrewManager(); setOut('Opening RAiBREW...'); return; } if (c === 'brew scan') { brewScanAll(); setOut('Scanning system tools...'); return; } if (c === 'brew missing') { const miss = Object.entries(brewResults).filter(([,v])=>v.status==='missing').map(([k])=>k); setOut(miss.length ? 'Missing: ' + miss.join(', ') : 'All tools installed!'); return; } if (c.startsWith('brew install ')) { const pkg = cmd.slice(13).trim(); if (!bridgeConnected) { setOut('RAiBRIDGE not connected.', 'err-out'); return; } bridgeSend({ type: 'brew_install', tool: pkg }); setOut(`Installing ${pkg}...`); return; } if (c.startsWith('files') || c.startsWith('ls') && c.includes(' ')) { const path = cmd.split(' ').slice(1).join(' ') || '~'; openFileBrowser(path); setOut(`Opening ${path}...`); return; } if (c === 'ls') { if (bridgeConnected) { bridgeSend({ type: 'ls', path: cwd }); setOut('Listing ' + cwd + '...'); } else setOut('RAiBRIDGE not connected.', 'err-out'); return; } if (c.startsWith('cd ')) { cwd = cmd.slice(3).trim(); document.getElementById('ps-dir').textContent = cwd; setOut('cwd: ' + cwd); return; } if (c.startsWith('cat ') || c.startsWith('file_read ')) { const path = cmd.split(' ').slice(1).join(' '); if (bridgeConnected) { bridgeSend({ type: 'file_read', path }); setOut('Reading ' + path + '...'); } else setOut('RAiBRIDGE not connected.', 'err-out'); return; } if (c.startsWith('open ')) { const target = cmd.slice(5).trim(); if (bridgeConnected) { bridgeSend({ type: 'open', target }); setOut('Opening ' + target + '...'); } else setOut('RAiBRIDGE not connected.', 'err-out'); return; } if (activeTab === 'bridge' || c.startsWith('exec ')) { const actualCmd = c.startsWith('exec ') ? cmd.slice(5) : cmd; if (!bridgeConnected) { setOut('RAiBRIDGE not connected.\nRun: node raibridge.js', 'err-out'); return; } orbEl.className = 'bridge'; sysEl.textContent = 'EXEC: RUNNING...'; curBlock.textContent = ''; bridgeSend({ type: 'exec', cmd: actualCmd, cwd }); return; } await doLLM(cmd, activeTab === 'shogun' || isShogun(cmd) ? 'shogun' : 'ronin'); }
+    function isShogun(cmd) { return /strategy|plan|architect|design|orchestrat|conduct|deep|analyze|long.term|should i|best way|how do i|build|create|make/i.test(cmd); }
+    async function doLLM(cmd, conductor) { const isRonin = conductor === 'ronin'; orbEl.className = isRonin ? 'thinking' : 'strategic'; document.getElementById('rai-orb-tb').style.background = isRonin ? 'var(--gold)' : 'var(--moss)'; sysEl.textContent = (isRonin ? 'RONIN' : 'SHOGUN') + ': THINKING...'; condTag.textContent = (isRonin ? '⚡ RONIN' : '□ SHOGUN'); const sysCtx = bridgeSysInfo ? `System: ${bridgeSysInfo.hostname} · ${bridgeSysInfo.cpuModel} · macOS ${bridgeSysInfo.release} · ${bridgeSysInfo.totalMem}GB RAM · Node ${bridgeSysInfo.node}` : 'System: RAiOS browser mode (RAiBRIDGE not connected)'; const sys = isRonin ? `You are RONIN — fast-reaction intelligence inside RAiOS (#RAICANDISH, #RYCANDISH). ${sysCtx}. No markdown. Pure signal.` : `You are SHOGUN — strategic conductor of RAiOS (#RAICANDISH). ${sysCtx}. No markdown. Prose only.`; try { const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, system: sys, messages: [{ role: 'user', content: cmd }] }) }); const data = await res.json(); const reply = data.content?.map(b => b.text||'').join('') || 'Conductor unreachable.'; setOut(reply, isRonin ? 'sensei' : 'strategic'); } catch(err) { setOut(`${conductor.toUpperCase()}: Network interrupted. Check connection.`, 'err-out'); } orbEl.className = ''; document.getElementById('rai-orb-tb').style.background = 'var(--red)'; sysEl.textContent = 'RAi: READY'; condTag.textContent = activeTab.toUpperCase(); }
+    let startOpen = false; function toggleStartMenu() { startOpen = !startOpen; document.getElementById('start-menu').classList.toggle('open', startOpen); } function closeStart() { startOpen = false; document.getElementById('start-menu').classList.remove('open'); } document.addEventListener('click', (e) => { if (startOpen && !e.target.closest('#start-menu') && !e.target.closest('#start-btn')) closeStart(); });
+    window.addEventListener('keydown', (e) => { if (e.ctrlKey && e.code === 'Space') { e.preventDefault(); termOpen ? closeTerminal() : openTerminal(); } if (e.key === 'Escape') { if (startOpen) { closeStart(); return; } if (termOpen) closeTerminal(); } if (e.ctrlKey && e.key === 'l' && termOpen) { e.preventDefault(); termOut.innerHTML = ''; }});
+    window.addEventListener('load', () => { const bootStatus = document.getElementById('boot-status'); const msgs = ['LOADING RAiOS KERNEL...', 'INIT TATAMI GRID...', 'STARTING RAiBREW...', 'CONNECTING RAiBRIDGE...', 'MOUNTING DOJO...', '#RAICANDISH READY.']; let i = 0; const iv = setInterval(() => { if (i < msgs.length) { bootStatus.textContent = msgs[i++]; } else { clearInterval(iv); setTimeout(() => { document.getElementById('boot').classList.add('gone'); notify('RAiOS', 'Kurai Edition. #RAICANDISH. Dojo active.', 'var(--red)'); if (!bridgeConnected) { setTimeout(() => notify('RAiBRIDGE', 'Not connected. Run: node raibridge.js in iTerm2', 'var(--gold)'), 800); } }, 400); } }, 500); setTimeout(bridgeConnect, 800); });
+    setTimeout(() => { const w = spawnWindow('WELCOME · RAiOS', `RAiOS · KURAI EDITION · #RAICANDISH\n\nCtrl+Space — Dojo Shell\nBRIDGE tab — Real shell via RAiBRIDGE\nRONIN tab — Fast AI reaction\nSHOGUN tab — Strategic AI depth\nRAiBREW — Self-bootstrapping packages\nFILES — Real filesystem browser\n\nTo enable real shell:\n  1. Save raibridge.js to your Mac\n  2. node raibridge.js (in iTerm2)\n  3. Click BRIDGE in menubar to connect\n\n#RYCANDISH · #RAiBOOT · #RAiDOS · 理`); w.style.left = '80px'; w.style.top = '50px'; w.style.width = '360px'; w.style.height = '320px'; }, 3800);
+  </script>
+</body>
+</html>

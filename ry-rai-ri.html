@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RY/RAI/RI — The Original Syn</title>
+  <style>
+    :root {
+      --bg: #06070d;
+      --surface: #111520;
+      --surface-2: #171b2a;
+      --text: #f4f7fb;
+      --muted: #96a1b5;
+      --accent: #ffbf36;
+      --accent-2: #00d9ff;
+      --accent-3: #7b5cff;
+      --border: rgba(255,255,255,0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, var(--bg), #10162a 55%, #171d30);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,0.25);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .nav-links { display: flex; gap: 12px; flex-wrap: wrap; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 24px;
+      align-items: start;
+      margin-bottom: 24px;
+    }
+    .panel {
+      background: rgba(17,21,32,0.9);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--accent-2);
+      font-size: 0.8rem;
+      margin-bottom: 8px;
+    }
+    h1, h2 { margin: 0 0 10px; }
+    .intro { color: var(--muted); line-height: 1.7; }
+    .grid { display: grid; gap: 20px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .workspace {
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .workspace [contenteditable="true"] {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      outline: none;
+      background: rgba(255,255,255,0.04);
+      line-height: 1.6;
+    }
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      color: var(--bg);
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .meter-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .tag { display: inline-block; padding: 4px 8px; margin: 4px 4px 0 0; border-radius: 999px; background: rgba(255,191,54,0.16); color: var(--accent); font-size: 0.8rem; }
+    .chat {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .bubble {
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.04);
+      line-height: 1.5;
+      color: var(--muted);
+    }
+    .bubble.user { background: rgba(124,92,255,0.2); color: var(--text); }
+    .bubble.ai { background: rgba(0,217,255,0.16); color: var(--text); }
+    .social { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+    @media (max-width: 900px) {
+      .hero, .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div><strong>RY/RAI/RI</strong></div>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="RAilingua.html">RAi Archive</a>
+      <a href="ninjastar.html">NinjaStar</a>
+      <a href="raios-v1.html">RAiOS v1.0</a>
+      <a href="kurai-edition.html">Kurai Edition</a>
+      <a href="kali-os.html">KALI OS</a>
+      <a href="raios-v4.html">RAiOS v4</a>
+      <a href="rai-archive.html">RAi Archive OS</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <section class="hero">
+      <div class="panel">
+        <div class="eyebrow">The Original Syn • untaxed</div>
+        <h1>RY/RAI/RI</h1>
+        <p class="intro">
+          This is the edge, the ledge, the living page. The original syn is a never-ending story engine made from pure source, editable, exportable, and open to remixing.
+          The page below carries that spirit forward with a study blueprint and a seismic monitor for the present moment.
+        </p>
+        <div class="social">
+          <a href="https://x.com/raicandish" target="_blank" rel="noreferrer">X</a>
+          <a href="https://www.instagram.com/rainoousis/" target="_blank" rel="noreferrer">Instagram</a>
+          <a href="https://www.youtube.com/@RaiCandish" target="_blank" rel="noreferrer">YouTube</a>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="eyebrow">Samurai Seismic Monitor</div>
+        <h2>Live pulse</h2>
+        <div class="meter-row"><span>Solar activity</span><strong id="solar-meter">Moderate</strong></div>
+        <div class="meter-row"><span>Recent quakes</span><strong id="quake-meter">3</strong></div>
+        <div class="meter-row"><span>Archive status</span><strong>Active</strong></div>
+        <div class="tag">Kp / Alarms</div>
+        <div class="tag">Ancient sites</div>
+        <div class="tag">Jungian mirror</div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel workspace">
+        <div class="eyebrow">Quine Study Blueprint</div>
+        <div id="title" contenteditable="true">Welcome to the future of html, editable pages</div>
+        <div id="workspace" contenteditable="true">
+          <div>Designed by: Ry' Candish (Rāi)</div>
+          <div>EST;22:08:86 09:00 NZST</div>
+          <div>Use this space to write, remix, and export your own living page.</div>
+        </div>
+        <button onclick="exportBlueprint()">Export HTML</button>
+      </div>
+
+      <div class="panel">
+        <div class="eyebrow">Companion prompt</div>
+        <h2>Ask the archive</h2>
+        <div class="chat" id="chat"></div>
+        <input id="prompt" type="text" placeholder="Ask about the archive, solar activity, or your notes..." style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);" />
+        <button onclick="sendPrompt()" style="margin-top:10px;">Send</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const chat = document.getElementById('chat');
+    const promptInput = document.getElementById('prompt');
+    const titleEl = document.getElementById('title');
+    const workspaceEl = document.getElementById('workspace');
+
+    function addBubble(text, type = 'ai') {
+      const bubble = document.createElement('div');
+      bubble.className = `bubble ${type}`;
+      bubble.textContent = text;
+      chat.appendChild(bubble);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function sendPrompt() {
+      const text = promptInput.value.trim();
+      if (!text) return;
+      addBubble(text, 'user');
+      promptInput.value = '';
+      setTimeout(() => {
+        const reply = /solar|quake|fault|earth|kp/i.test(text)
+          ? 'Samurai is watching solar-seismic correlation and archived hazard signals in real time.'
+          : /idea|note|write|edit/i.test(text)
+            ? 'The archive is ready to capture your next thought. Use the editable workspace above and export it when you are done.'
+            : 'The Original Syn is listening. Ask for notes, prompts, or a reading of the current state.';
+        addBubble(reply, 'ai');
+      }, 250);
+    }
+
+    function exportBlueprint() {
+      const currentHTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+      const blob = new Blob([currentHTML], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ry-rai-ri-export.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    titleEl.addEventListener('input', () => {
+      document.title = titleEl.textContent || 'RY/RAI/RI';
+    });
+
+    workspaceEl.addEventListener('input', () => {
+      const text = workspaceEl.textContent.trim();
+      if (text.length > 0) {
+        document.getElementById('solar-meter').textContent = 'Active';
+        document.getElementById('quake-meter').textContent = '4';
+      }
+    });
+
+    addBubble('The archive is awake. Ask for guidance, notes, or a reflection.', 'ai');
+  </script>
+</body>
+</html>

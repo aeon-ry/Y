@@ -368,6 +368,63 @@
       text-align: right;
       flex-shrink: 0;
     }
+
+    .site-nav {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 2000;
+      display: flex;
+      gap: 6px;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(212, 160, 48, 0.3);
+      border-radius: 6px;
+      backdrop-filter: blur(6px);
+    }
+
+    .site-nav a {
+      color: var(--text-white);
+      text-decoration: none;
+      padding: 4px 8px;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .site-nav a:hover,
+    .site-nav a.active {
+      color: var(--primary-yellow);
+    }
+
+    .agent-toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .agent-toolbar input {
+      flex: 1;
+      min-width: 220px;
+      padding: 8px 10px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(212, 160, 48, 0.25);
+      color: var(--text-white);
+      font-family: var(--mono);
+      border-radius: 4px;
+    }
+
+    .agent-toolbar .stats-badge {
+      padding: 6px 10px;
+      background: rgba(45, 154, 122, 0.16);
+      border-radius: 4px;
+      font-size: 10px;
+      color: var(--primary-yellow);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
     
     /* ═══ WALKTHROUGH OVERLAY ═══ */
     .walkthrough-overlay {
@@ -612,7 +669,17 @@
 </head>
 <body>
 
-<canvas id="rain-canvas"></canvas>
+<nav class="site-nav">
+  <a href="index.html">Home</a>
+  <a href="RAilingua.html" class="active">RAi Archive</a>
+  <a href="ninjastar.html">NinjaStar</a>
+  <a href="ry-rai-ri.html">RY/RAI/RI</a>
+  <a href="raios-v1.html">RAiOS v1.0</a>
+  <a href="kurai-edition.html">Kurai Edition</a>
+  <a href="kali-os.html">KALI OS</a>
+  <a href="raios-v4.html">RAiOS v4</a>
+  <a href="rai-archive.html">RAi Archive OS</a>
+</nav>
 
 <div class="app-container">
   
@@ -660,6 +727,10 @@
     
     <div class="content-scroll">
       <div class="module active" id="module-agents">
+        <div class="agent-toolbar">
+          <input id="agent-search" type="text" placeholder="Search agents by name, meaning, or script..." />
+          <div class="stats-badge" id="agent-stats">0 agents</div>
+        </div>
         <div id="agents-list"></div>
         <div class="empty-state" id="agents-empty">
           <div class="empty-icon">[AGENTS]</div>
@@ -1032,7 +1103,8 @@ const DEAD_END_SCENARIOS = {
 let appState = {
   currentModule: 'agents',
   ideas: [],
-  walkthrough: 0
+  walkthrough: 0,
+  agentSearch: ''
 };
 
 // ════════════════ RAINING RINGS ════════════════
@@ -1156,12 +1228,18 @@ function broadcastAgents() {
 function renderAgents() {
   const list = document.getElementById('agents-list');
   const empty = document.getElementById('agents-empty');
+  const searchInput = document.getElementById('agent-search');
+  const stats = document.getElementById('agent-stats');
+  const query = (searchInput?.value || appState.agentSearch || '').trim().toLowerCase();
   list.innerHTML = '';
-  let hasAgents = false;
+  let visibleCount = 0;
   
   Object.entries(CHARACTER_AGENTS).forEach(([scriptType, agents]) => {
-    hasAgents = true;
     agents.forEach(agent => {
+      const haystack = `${agent.name} ${agent.meaning} ${agent.script} ${agent.phonetic} ${agent.etymology}`.toLowerCase();
+      if (query && !haystack.includes(query)) return;
+
+      visibleCount += 1;
       const card = document.createElement('div');
       card.className = 'agent-card';
       card.innerHTML = `
@@ -1177,10 +1255,11 @@ function renderAgents() {
       list.appendChild(card);
     });
   });
-  empty.style.display = hasAgents ? 'none' : 'block';
-  
-  // Broadcast agents when rendered
+
+  empty.style.display = visibleCount ? 'none' : 'block';
+  if (stats) stats.textContent = `${visibleCount} agent${visibleCount === 1 ? '' : 's'}`;
   broadcastAgents();
+  updateProgress();
 }
 
 function renderDeadEnd() {
@@ -1237,6 +1316,7 @@ function addIdea(text) {
   });
   localStorage.setItem('rai-state', JSON.stringify(appState));
   renderIdeas();
+  updateProgress();
 }
 
 function renderIdeas() {
@@ -1253,6 +1333,16 @@ function renderIdeas() {
 
 function vibrate(duration = 20) {
   if (navigator.vibrate) navigator.vibrate(duration);
+}
+
+function updateProgress() {
+  const progress = document.getElementById('rp-progress');
+  if (!progress) return;
+  progress.innerHTML = `
+    <div class="rp-item">Agents: ${Object.keys(CHARACTER_AGENTS).reduce((sum, key) => sum + CHARACTER_AGENTS[key].length, 0)} indexed</div>
+    <div class="rp-item">Ideas: ${appState.ideas.length} captured</div>
+    <div class="rp-item">Focus: ${appState.currentModule}</div>
+  `;
 }
 
 // ════════════════ INITIALIZATION ════════════════
@@ -1286,6 +1376,16 @@ window.addEventListener('load', () => {
       document.getElementById('idea-input').value = '';
     }
   });
+
+  const agentSearch = document.getElementById('agent-search');
+  if (agentSearch) {
+    agentSearch.value = appState.agentSearch || '';
+    agentSearch.addEventListener('input', () => {
+      appState.agentSearch = agentSearch.value;
+      localStorage.setItem('rai-state', JSON.stringify(appState));
+      renderAgents();
+    });
+  }
   
   // TTS Ai
   document.getElementById('companion-send').addEventListener('click', () => {
@@ -1297,9 +1397,18 @@ window.addEventListener('load', () => {
     const msgs = document.getElementById('companion-messages');
     msgs.innerHTML += `<div style="margin-bottom: 10px; padding: 8px; background: rgba(212,160,48,0.1); border-radius: 3px; box-shadow: 0 0 8px rgba(212,160,48,0.2);"><strong>YOU:</strong> ${text}</div>`;
     input.value = '';
+
+    const reply = (() => {
+      const lowered = text.toLowerCase();
+      if (/idea|thought|note|memory/i.test(lowered)) return 'A good idea is worth capturing early. Try tagging it with #theme so it becomes easier to revisit.';
+      if (/language|script|kanji|rune|cyrillic|greek|latin|devanagari/i.test(lowered)) return 'The Agents module is best for that. Search by script or meaning to reveal the hidden structure.';
+      if (/dead end|conflict|argu|defend|manipul/i.test(lowered)) return 'Use the Dead End module. It grants short, grounded responses that preserve composure under pressure.';
+      if (/cosmos|connect|network/i.test(lowered)) return 'The Cosmos view is meant to reveal how your ideas, symbols, and notes relate across the archive.';
+      return 'I can help you structure the archive, sharpen an idea, or guide you through a difficult language pattern.';
+    })();
     
     setTimeout(() => {
-      msgs.innerHTML += `<div style="margin-bottom: 10px; padding: 8px; background: rgba(45,154,122,0.1); border-radius: 3px; box-shadow: 0 0 8px rgba(45,154,122,0.2);"><strong>READY?:</strong> This is not a good time, I am sorry.</div>`;
+      msgs.innerHTML += `<div style="margin-bottom: 10px; padding: 8px; background: rgba(45,154,122,0.1); border-radius: 3px; box-shadow: 0 0 8px rgba(45,154,122,0.2);"><strong>READY:</strong> ${reply}</div>`;
       msgs.scrollTop = msgs.scrollHeight;
     }, 300);
     msgs.scrollTop = msgs.scrollHeight;
@@ -1344,6 +1453,8 @@ window.addEventListener('load', () => {
     dock.appendChild(syncButton);
   }
   
+  updateProgress();
+
   // First-time walkthrough
   if (!localStorage.getItem('rai-walkthrough-done')) {
     showWalkthrough(1);

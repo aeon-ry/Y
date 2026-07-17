@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAiOS v1.0 — RAiCandish</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --gold: #d4af37;
+      --cyan: #00f5ff;
+      --green: #39ff14;
+      --red: #ff3131;
+      --dim: #1a1a1a;
+      --mid: #2a2a2a;
+      --text: #c8c8c8;
+      --font-display: 'VT323', monospace;
+      --font-mono: 'Share Tech Mono', monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      user-select: none;
+    }
+    .system-nav-bar {
+      position: sticky;
+      top: 0;
+      z-index: 3000;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 8px 12px;
+      background: rgba(10, 10, 10, 0.95);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+    }
+    .system-nav-bar a {
+      color: var(--text);
+      text-decoration: none;
+      padding: 4px 8px;
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border: 1px solid transparent;
+      border-radius: 3px;
+    }
+    .system-nav-bar a:hover,
+    .system-nav-bar a.active {
+      color: var(--gold);
+      border-color: var(--gold);
+      background: rgba(212, 175, 55, 0.14);
+    }
+    #bg-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      opacity: 0.6;
+    }
+    #scanlines {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 1;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 2px,
+        rgba(0,0,0,0.15) 2px,
+        rgba(0,0,0,0.15) 4px
+      );
+      opacity: 0.4;
+    }
+    #bios-screen {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #000;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 40px;
+      font-family: var(--font-display);
+      font-size: 20px;
+      color: #aaa;
+    }
+    #bios-screen .bios-header { color: #fff; font-size: 24px; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+    #bios-screen .bios-line { line-height: 1.6; opacity: 0; transition: opacity 0.1s; }
+    #bios-screen .bios-line.visible { opacity: 1; }
+    #bios-screen .bios-line.ok .tag { color: var(--green); }
+    #bios-screen .bios-line.warn .tag { color: var(--gold); }
+    #bios-screen .bios-line.err .tag { color: var(--red); }
+    #bios-progress { margin-top: 30px; }
+    .node-bar { margin: 8px 0; display: flex; align-items: center; gap: 12px; opacity: 0; transition: opacity 0.3s; }
+    .node-bar.visible { opacity: 1; }
+    .node-label { font-family: var(--font-display); font-size: 18px; width: 220px; color: var(--cyan); }
+    .node-track { flex: 1; height: 16px; border: 1px solid #333; background: #0a0a0a; position: relative; overflow: hidden; }
+    .node-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--cyan)); width: 0%; transition: width 0.05s linear; box-shadow: 0 0 8px var(--cyan); }
+    .node-pct { font-family: var(--font-display); font-size: 16px; width: 50px; text-align: right; color: var(--gold); }
+    .node-status { font-family: var(--font-display); font-size: 16px; width: 120px; color: #555; }
+    .node-status.ready { color: var(--green); }
+    #distro-selector { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 99; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
+    #distro-selector h2 { font-family: var(--font-display); font-size: 36px; color: var(--gold); letter-spacing: 4px; text-shadow: 0 0 20px var(--gold); }
+    #distro-selector p { color: #555; font-size: 13px; letter-spacing: 2px; }
+    .distro-grid { display: grid; grid-template-columns: repeat(3, 200px); gap: 12px; margin-top: 10px; }
+    .distro-card { border: 1px solid #333; background: var(--dim); padding: 16px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+    .distro-card::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 2px; background: var(--cyan); transition: left 0.3s; }
+    .distro-card:hover::before { left: 0; }
+    .distro-card:hover { border-color: var(--cyan); background: #0f1a1a; box-shadow: 0 0 20px rgba(0,245,255,0.1); }
+    .distro-card .distro-name { font-family: var(--font-display); font-size: 22px; color: var(--cyan); margin-bottom: 6px; }
+    .distro-card .distro-desc { font-size: 11px; color: #555; line-height: 1.5; }
+    .distro-card .distro-dot { width: 8px; height: 8px; border-radius: 50%; position: absolute; top: 12px; right: 12px; }
+    #desktop { position: fixed; top: 0; left: 0; width: 100%; height: calc(100vh - 36px); z-index: 2; display: none; }
+    #taskbar { position: fixed; bottom: 0; left: 0; width: 100%; height: 36px; background: rgba(10,10,10,0.95); border-top: 1px solid #222; z-index: 50; display: none; align-items: center; padding: 0 12px; gap: 8px; }
+    #taskbar-start { font-family: var(--font-display); font-size: 20px; color: var(--gold); padding: 0 12px; border-right: 1px solid #333; height: 100%; display: flex; align-items: center; cursor: pointer; letter-spacing: 2px; transition: color 0.2s; }
+    #taskbar-start:hover { color: var(--cyan); }
+    #taskbar-apps { flex: 1; display: flex; gap: 4px; overflow: hidden; }
+    .taskbar-btn { font-family: var(--font-mono); font-size: 11px; color: #888; background: var(--dim); border: 1px solid #333; padding: 2px 10px; cursor: pointer; white-space: nowrap; transition: all 0.15s; height: 24px; display: flex; align-items: center; }
+    .taskbar-btn:hover, .taskbar-btn.active { color: var(--cyan); border-color: var(--cyan); }
+    #taskbar-right { display: flex; align-items: center; gap: 16px; padding-left: 12px; border-left: 1px solid #333; }
+    #clock { font-family: var(--font-display); font-size: 20px; color: var(--gold); letter-spacing: 2px; min-width: 80px; text-align: right; }
+    #hive-status { display: flex; gap: 4px; }
+    .hive-dot { width: 6px; height: 6px; border-radius: 50%; background: #333; transition: background 0.3s, box-shadow 0.3s; }
+    .hive-dot.active { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+    .hive-dot.thinking { background: var(--gold); box-shadow: 0 0 6px var(--gold); animation: pulse-dot 0.5s infinite alternate; }
+    @keyframes pulse-dot { from { opacity: 0.4; } to { opacity: 1; } }
+    .window { position: absolute; background: rgba(10,10,10,0.96); border: 1px solid #333; min-width: 300px; min-height: 200px; box-shadow: 0 0 40px rgba(0,0,0,0.8); display: flex; flex-direction: column; backdrop-filter: blur(4px); }
+    .window.focused { border-color: #444; box-shadow: 0 0 40px rgba(0,0,0,0.9), 0 0 1px var(--cyan) inset; }
+    .window-titlebar { height: 30px; background: var(--dim); border-bottom: 1px solid #222; display: flex; align-items: center; padding: 0 8px; gap: 8px; cursor: move; flex-shrink: 0; }
+    .window-title { font-family: var(--font-display); font-size: 18px; color: var(--gold); flex: 1; letter-spacing: 1px; }
+    .window-btn { width: 18px; height: 18px; border: 1px solid #444; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #666; transition: all 0.15s; font-family: var(--font-mono); }
+    .window-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .window-btn.close:hover { border-color: var(--red); color: var(--red); }
+    .window-content { flex: 1; overflow: auto; position: relative; }
+    .window-resize { position: absolute; bottom: 0; right: 0; width: 14px; height: 14px; cursor: se-resize; border-right: 2px solid #333; border-bottom: 2px solid #333; }
+    #chat-window .window-content { display: flex; flex-direction: column; }
+    #chat-log { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+    #chat-log::-webkit-scrollbar { width: 4px; }
+    #chat-log::-webkit-scrollbar-track { background: transparent; }
+    #chat-log::-webkit-scrollbar-thumb { background: #333; }
+    .chat-msg { display: flex; gap: 8px; animation: msg-in 0.2s ease; }
+    @keyframes msg-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .chat-msg .role { font-family: var(--font-display); font-size: 16px; flex-shrink: 0; padding-top: 1px; }
+    .chat-msg.user .role { color: var(--gold); }
+    .chat-msg.oracle .role { color: var(--cyan); }
+    .chat-msg.system .role { color: var(--green); }
+    .chat-msg.error .role { color: var(--red); }
+    .chat-msg .body { line-height: 1.6; font-size: 13px; color: var(--text); word-break: break-word; }
+    .chat-msg.system .body { color: #555; font-size: 12px; }
+    .chat-msg.error .body { color: var(--red); }
+    #chat-input-row { border-top: 1px solid #1e1e1e; display: flex; align-items: center; padding: 8px; gap: 8px; background: var(--dim); flex-shrink: 0; }
+    #chat-prompt { font-family: var(--font-display); font-size: 18px; color: var(--gold); flex-shrink: 0; }
+    #chat-input { flex: 1; background: transparent; border: none; outline: none; font-family: var(--font-mono); font-size: 13px; color: var(--text); caret-color: var(--cyan); }
+    #chat-send { font-family: var(--font-display); font-size: 16px; color: var(--cyan); background: transparent; border: 1px solid #333; padding: 2px 10px; cursor: pointer; transition: all 0.15s; }
+    #chat-send:hover { border-color: var(--cyan); box-shadow: 0 0 8px rgba(0,245,255,0.3); }
+    .thinking-indicator { display: flex; gap: 4px; padding: 4px 0; }
+    .thinking-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); animation: think 1s infinite; }
+    .thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes think { 0%, 60%, 100% { opacity: 0.2; transform: scale(0.8); } 30% { opacity: 1; transform: scale(1); } }
+    #files-window .window-content { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .file-toolbar { display: flex; gap: 6px; border-bottom: 1px solid #1e1e1e; padding-bottom: 8px; }
+    .file-btn { font-family: var(--font-display); font-size: 16px; color: #666; background: transparent; border: 1px solid #2a2a2a; padding: 2px 10px; cursor: pointer; transition: all 0.15s; }
+    .file-btn:hover { color: var(--gold); border-color: var(--gold); }
+    #file-list { flex: 1; overflow-y: auto; font-size: 12px; }
+    .file-item { display: grid; grid-template-columns: 1fr 80px 120px; padding: 4px 6px; border-bottom: 1px solid #111; cursor: pointer; transition: background 0.1s; }
+    .file-item:hover { background: #111; }
+    .file-item .fname { color: var(--cyan); }
+    .file-item .fsize { color: #555; text-align: right; }
+    .file-item .fdate { color: #444; text-align: right; }
+    #settings-window .window-content { padding: 12px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+    .settings-section h3 { font-family: var(--font-display); font-size: 20px; color: var(--gold); margin-bottom: 10px; border-bottom: 1px solid #1e1e1e; padding-bottom: 4px; }
+    .theme-url-row { display: flex; gap: 6px; }
+    .theme-url-input { flex: 1; background: var(--dim); border: 1px solid #333; color: var(--text); font-family: var(--font-mono); font-size: 12px; padding: 4px 8px; outline: none; }
+    .theme-url-input:focus { border-color: var(--cyan); }
+    .apply-btn { font-family: var(--font-display); font-size: 16px; color: var(--cyan); background: transparent; border: 1px solid var(--cyan); padding: 4px 12px; cursor: pointer; transition: all 0.15s; }
+    .apply-btn:hover { background: rgba(0,245,255,0.1); box-shadow: 0 0 10px rgba(0,245,255,0.2); }
+    .preset-themes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    .preset-btn { font-family: var(--font-mono); font-size: 11px; color: #888; background: var(--dim); border: 1px solid #2a2a2a; padding: 6px 10px; cursor: pointer; text-align: left; transition: all 0.15s; }
+    .preset-btn:hover { color: var(--gold); border-color: #444; }
+    .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
+    .toggle-label { color: #888; font-size: 12px; }
+    .toggle { width: 40px; height: 20px; background: #222; border: 1px solid #444; cursor: pointer; position: relative; transition: background 0.2s; }
+    .toggle.on { background: rgba(0,245,255,0.2); border-color: var(--cyan); }
+    .toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; background: #555; transition: all 0.2s; }
+    .toggle.on::after { left: 23px; background: var(--cyan); }
+    #compass-overlay { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 10; display: none; gap: 4px; flex-direction: column; align-items: center; pointer-events: none; opacity: 0.5; }
+    #compass-overlay.visible { display: flex; opacity: 0.7; }
+    .compass-row { display: flex; gap: 4px; }
+    .compass-dir { font-family: var(--font-display); font-size: 14px; color: #555; border: 1px solid #222; padding: 2px 8px; letter-spacing: 1px; }
+    #live-theme { display: none; }
+    .distro-kolibri { --accent: var(--cyan); }
+    .distro-dos { --bg: #000080; --gold: #ffff00; --cyan: #00ffff; }
+    .distro-alpine { --gold: #0d597f; --cyan: #5c8374; }
+    #start-menu { position: fixed; bottom: 36px; left: 0; width: 220px; background: rgba(10,10,10,0.98); border: 1px solid #333; border-bottom: none; z-index: 60; display: none; flex-direction: column; box-shadow: 4px -4px 20px rgba(0,0,0,0.8); }
+    #start-menu.open { display: flex; }
+    .start-header { font-family: var(--font-display); font-size: 22px; color: var(--gold); padding: 10px 14px; border-bottom: 1px solid #222; letter-spacing: 3px; }
+    .start-item { font-family: var(--font-mono); font-size: 12px; color: #888; padding: 8px 14px; cursor: pointer; border-bottom: 1px solid #111; display: flex; justify-content: space-between; align-items: center; transition: all 0.1s; }
+    .start-item:hover { background: #111; color: var(--cyan); }
+    .start-item .shortcut { color: #444; font-size: 11px; }
+    #toast-container { position: fixed; top: 16px; right: 16px; z-index: 200; display: flex; flex-direction: column; gap: 6px; }
+    .toast { background: rgba(10,10,10,0.96); border: 1px solid var(--cyan); padding: 8px 14px; font-family: var(--font-mono); font-size: 12px; color: var(--text); animation: toast-in 0.2s ease; box-shadow: 0 0 20px rgba(0,245,255,0.1); max-width: 280px; }
+    .toast.warn { border-color: var(--gold); }
+    .toast.error { border-color: var(--red); }
+    @keyframes toast-in { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+    @media (max-width: 900px) { .window-title { font-size: 15px; } #taskbar-start { padding: 0 8px; font-size: 18px; } .taskbar-btn { font-size: 10px; padding: 2px 7px; } #clock { font-size: 17px; } }
+    @media (max-width: 480px) { body { font-size: 13px; } .window-titlebar { height: 38px; padding: 0 10px; } .window-title { font-size: 16px; } .window-btn { width: 32px; height: 32px; font-size: 14px; } #compass-overlay { top: auto; bottom: 44px; left: 50%; transform: translateX(-50%); opacity: 0.85; } .compass-dir { font-size: 16px; padding: 6px 14px; border-color: #333; color: var(--cyan); } #taskbar { height: 40px; padding: 0 8px; } #taskbar-start { font-size: 16px; padding: 0 10px; } .taskbar-btn { height: 28px; font-size: 10px; } #clock { font-size: 15px; letter-spacing: 1px; } .hive-dot { width: 8px; height: 8px; } #chat-input { font-size: 15px; } #chat-send { padding: 4px 14px; font-size: 18px; } #chat-prompt { font-size: 22px; } #bios-screen { font-size: 14px; padding: 12px 16px; } #bios-screen .bios-header { font-size: 16px; } .node-label { font-size: 13px; width: 160px; } .node-pct { font-size: 13px; } .node-status { font-size: 12px; width: 80px; } .distro-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; } .distro-card { padding: 12px; } .distro-name { font-size: 18px; } #distro-selector h2 { font-size: 26px; } .file-item { padding: 8px 6px; } #start-menu { width: 100%; } .start-item { padding: 12px 14px; font-size: 13px; } }
+  </style>
+  <link id="live-theme" rel="stylesheet" href="">
+</head>
+<body>
+  <div class="system-nav-bar">
+    <a href="index.html">Home</a>
+    <a href="RAilingua.html">RAi Archive</a>
+    <a href="ninjastar.html">NinjaStar</a>
+    <a href="ry-rai-ri.html">RY/RAI/RI</a>
+    <a href="raios-v1.html" class="active">RAiOS v1.0</a>
+    <a href="kurai-edition.html">Kurai Edition</a>
+    <a href="kali-os.html">KALI OS</a>
+    <a href="raios-v4.html">RAiOS v4</a>
+    <a href="rai-archive.html">RAi Archive OS</a>
+  </div>
+  <canvas id="bg-canvas"></canvas>
+  <div id="scanlines"></div>
+  <div id="toast-container"></div>
+  <div id="bios-screen">
+    <div class="bios-header">RAiOS v1.0 / RAiCandish Bootstrap BIOS</div>
+    <div id="bios-lines"></div>
+    <div id="bios-progress" style="margin-top:30px;display:none;">
+      <div class="node-bar" id="nb-oracle">
+        <span class="node-label">NODE-1: ORACLE</span>
+        <div class="node-track"><div class="node-fill" id="nf-oracle"></div></div>
+        <span class="node-pct" id="np-oracle">0%</span>
+        <span class="node-status" id="ns-oracle">INIT...</span>
+      </div>
+      <div class="node-bar" id="nb-executor">
+        <span class="node-label">NODE-2: EXECUTOR</span>
+        <div class="node-track"><div class="node-fill" id="nf-executor"></div></div>
+        <span class="node-pct" id="np-executor">0%</span>
+        <span class="node-status" id="ns-executor">WAITING</span>
+      </div>
+      <div class="node-bar" id="nb-scout">
+        <span class="node-label">NODE-3: SCOUT</span>
+        <div class="node-track"><div class="node-fill" id="nf-scout"></div></div>
+        <span class="node-pct" id="np-scout">0%</span>
+        <span class="node-status" id="ns-scout">WAITING</span>
+      </div>
+      <div class="node-bar" id="nb-librarian">
+        <span class="node-label">NODE-4: LIBRARIAN</span>
+        <div class="node-track"><div class="node-fill" id="nf-librarian"></div></div>
+        <span class="node-pct" id="np-librarian">0%</span>
+        <span class="node-status" id="ns-librarian">WAITING</span>
+      </div>
+    </div>
+  </div>
+  <div id="distro-selector">
+    <h2>SELECT DISTRO</h2>
+    <p>PERSONALITY PROFILE — CHOOSE YOUR ENVIRONMENT</p>
+    <div class="distro-grid">
+      <div class="distro-card" onclick="selectDistro('kolibri')">
+        <div class="distro-dot" style="background:#00f5ff;box-shadow:0 0 6px #00f5ff"></div>
+        <div class="distro-name">KolibriCore</div>
+        <div class="distro-desc">Minimal. Precise. Every byte justified. The original RAiOS personality.</div>
+      </div>
+      <div class="distro-card" onclick="selectDistro('dos')">
+        <div class="distro-dot" style="background:#ffff00;box-shadow:0 0 6px #ffff00"></div>
+        <div class="distro-name">DOSMode</div>
+        <div class="distro-desc">Blue void. Yellow text. Pure command-line heritage. No decoration.</div>
+      </div>
+      <div class="distro-card" onclick="selectDistro('alpine')">
+        <div class="distro-dot" style="background:#5c8374;box-shadow:0 0 6px #5c8374"></div>
+        <div class="distro-name">AlpineShell</div>
+        <div class="distro-desc">No bloat. Minimal footprint. Every feature earned.</div>
+      </div>
+      <div class="distro-card" onclick="selectDistro('anima')">
+        <div class="distro-dot" style="background:#d4af37;box-shadow:0 0 6px #d4af37"></div>
+        <div class="distro-name">ANIMA</div>
+        <div class="distro-desc">Gold and void. The RAiCandish visual language in full effect.</div>
+      </div>
+      <div class="distro-card" onclick="selectDistro('redcandle')">
+        <div class="distro-dot" style="background:#ff3131;box-shadow:0 0 6px #ff3131"></div>
+        <div class="distro-name">RedCandle</div>
+        <div class="distro-desc">Danger palette. High contrast. Alert mode. Signal red.</div>
+      </div>
+      <div class="distro-card" onclick="selectDistro('custom')">
+        <div class="distro-dot" style="background:#555"></div>
+        <div class="distro-name">Custom URL</div>
+        <div class="distro-desc">Load any CSS from any URL. Your own distro from your own repo.</div>
+      </div>
+    </div>
+  </div>
+  <div id="desktop"></div>
+  <div id="compass-overlay">
+    <div class="compass-row"><span class="compass-dir" id="cd-n" onclick="compassTap('n')" style="cursor:pointer">N: FILES</span></div>
+    <div class="compass-row">
+      <span class="compass-dir" id="cd-w" onclick="compassTap('w')" style="cursor:pointer">W: SETTINGS</span>
+      <span class="compass-dir" style="color:#333;border-color:#111;padding:2px 12px">+</span>
+      <span class="compass-dir" id="cd-e" onclick="compassTap('e')" style="cursor:pointer">E: TERMINAL</span>
+    </div>
+    <div class="compass-row"><span class="compass-dir" id="cd-s" onclick="compassTap('s')" style="cursor:pointer">S: CHAT</span></div>
+  </div>
+  <div id="start-menu">
+    <div class="start-header">RAiOS</div>
+    <div class="start-item" onclick="openWindow('chat-window')">Oracle Chat Dock <span class="shortcut">S</span></div>
+    <div class="start-item" onclick="openWindow('files-window')">File Manager <span class="shortcut">N</span></div>
+    <div class="start-item" onclick="openWindow('settings-window')">Settings / Themes <span class="shortcut">UP</span></div>
+    <div class="start-item" onclick="openWindow('terminal-window')">Terminal <span class="shortcut">DOWN</span></div>
+    <div class="start-item" onclick="toggleCompass()">Toggle Compass <span class="shortcut">C</span></div>
+    <div class="start-item" onclick="retileWindows();toggleStartMenu()">Retile Windows <span class="shortcut">R</span></div>
+    <div class="start-item" onclick="exportSession()">Export Session</div>
+    <div class="start-item" onclick="hardReboot()" style="color:#ff3131;border-top:1px solid #222;margin-top:4px">Reboot</div>
+  </div>
+  <div id="taskbar">
+    <div id="taskbar-start" onclick="toggleStartMenu()">RAiOS</div>
+    <div id="taskbar-apps"></div>
+    <div id="taskbar-right">
+      <div id="hive-status">
+        <div class="hive-dot" id="hd-1" title="Oracle"></div>
+        <div class="hive-dot" id="hd-2" title="Executor"></div>
+        <div class="hive-dot" id="hd-3" title="Scout"></div>
+        <div class="hive-dot" id="hd-4" title="Librarian"></div>
+      </div>
+      <div id="clock">--:--:--</div>
+    </div>
+  </div>
+  <script type="module">
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128/build/three.module.js';
+    const canvas = document.getElementById('bg-canvas'); const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true }); renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); renderer.setSize(window.innerWidth, window.innerHeight);
+    const scene = new THREE.Scene(); const camera = new THREE.OrthographicCamera(window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, 0.1, 100); camera.position.z = 10;
+    const TILE_SIZE = 18; const COLS = Math.ceil(window.innerWidth / TILE_SIZE) + 2; const ROWS = Math.ceil(window.innerHeight / TILE_SIZE) + 2; const TOTAL = COLS * ROWS;
+    const geometry = new THREE.BufferGeometry(); const positions = new Float32Array(TOTAL * 3); const colors = new Float32Array(TOTAL * 3); const sizes = new Float32Array(TOTAL);
+    for (let i = 0; i < TOTAL; i++) {
+      const col = i % COLS; const row = Math.floor(i / COLS); positions[i * 3] = col * TILE_SIZE - window.innerWidth / 2; positions[i * 3 + 1] = row * TILE_SIZE - window.innerHeight / 2; positions[i * 3 + 2] = 0; sizes[i] = 6;
+    }
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3)); geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3)); geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    const material = new THREE.ShaderMaterial({ vertexShader: `attribute float size; attribute vec3 color; varying vec3 vColor; void main() { vColor = color; vec4 mvPos = modelViewMatrix * vec4(position, 1.0); gl_PointSize = size; gl_Position = projectionMatrix * mvPos; }`, fragmentShader: `varying vec3 vColor; void main() { vec2 uv = gl_PointCoord - 0.5; float d = length(uv); if (d > 0.5) discard; float alpha = 1.0 - smoothstep(0.3, 0.5, d); gl_FragColor = vec4(vColor, alpha * 0.7); }`, transparent: true, vertexColors: true, depthWrite: false });
+    const points = new THREE.Points(geometry, material); scene.add(points);
+    const tileData = new Float32Array(TOTAL); const tilePhase = new Float32Array(TOTAL); for (let i = 0; i < TOTAL; i++) { tilePhase[i] = Math.random() * Math.PI * 2; }
+    window.bgPulse = (intensity = 0.5) => { const cx = Math.floor(COLS / 2); const cy = Math.floor(ROWS / 2); const idx = cy * COLS + cx; tileData[idx] = Math.min(1, tileData[idx] + intensity); };
+    window.bgRipple = (x, y, intensity = 0.3) => { const col = Math.floor((x / window.innerWidth) * COLS); const row = Math.floor((y / window.innerHeight) * ROWS); for (let i = 0; i < TOTAL; i++) { const tc = i % COLS; const tr = Math.floor(i / COLS); const dist = Math.sqrt((tc - col) ** 2 + (tr - row) ** 2); if (dist < 8) { setTimeout(() => { tileData[i] = Math.min(1, tileData[i] + intensity * (1 - dist / 8)); }, dist * 30); } } };
+    let animFrame = 0; function animateBg() { requestAnimationFrame(animateBg); animFrame++; const t = animFrame * 0.015; const ca = colors; for (let i = 0; i < TOTAL; i++) { const ph = tilePhase[i]; const wave = (Math.sin(t + ph) + 1) * 0.5; const energy = tileData[i]; const base = wave * 0.04 + 0.01; const r = base + energy * 0.8 * (0.83 + Math.sin(t * 0.5 + ph) * 0.17); const g = base * 0.7 + energy * 0.6; const b = base * 2 + energy * 0.3; ca[i * 3] = Math.min(1, r); ca[i * 3 + 1] = Math.min(1, g); ca[i * 3 + 2] = Math.min(1, b); tileData[i] *= 0.97; } geometry.attributes.color.needsUpdate = true; renderer.render(scene, camera); }
+    animateBg();
+    window.addEventListener('resize', () => { renderer.setSize(window.innerWidth, window.innerHeight); camera.left = window.innerWidth / -2; camera.right = window.innerWidth / 2; camera.top = window.innerHeight / 2; camera.bottom = window.innerHeight / -2; camera.updateProjectionMatrix(); });
+    document.addEventListener('keypress', (e) => { if (window.bgRipple) bgRipple(Math.random() * window.innerWidth, Math.random() * window.innerHeight, 0.15); });
+  </script>
+  <script>
+    const OS = { booted: false, distro: null, hive: { oracle: false, executor: false, scout: false, librarian: false }, windows: {}, zTop: 100, compass: true, chatHistory: [], fs: null, oracleReady: false, scanlines: true, modelLoading: false };
+    let oraclePipeline = null;
+    const DISTROS = { kolibri: { name: 'KolibriCore', cssUrl: null, systemPrompt: 'You are Oracle, the primary intelligence node of RAiOS — a browser-based AI operating system created by Ry (RAiCandish).', palette: { gold: '#d4af37', cyan: '#00f5ff' }, compassLabels: { n: 'N: FILES', s: 'S: CHAT', e: 'E: GAMES', w: 'W: BROWSER' } }, dos: { name: 'DOSMode', cssUrl: null, systemPrompt: 'You are COMMAND.COM, the shell of RAiOS in DOS mode.', palette: { gold: '#ffff00', cyan: '#00ffff' }, compassLabels: { n: 'N: DIR', s: 'S: PROMPT', e: 'E: GAMES', w: 'W: NET' } }, alpine: { name: 'AlpineShell', cssUrl: null, systemPrompt: 'You are Oracle running on AlpineShell — a minimal RAiOS distro.', palette: { gold: '#0d597f', cyan: '#5c8374' }, compassLabels: { n: 'N: FS', s: 'S: AI', e: 'E: EMU', w: 'W: NET' } }, anima: { name: 'ANIMA', cssUrl: null, systemPrompt: 'You are Oracle within ANIMA — the living substrate of RAiOS.', palette: { gold: '#d4af37', cyan: '#b8860b' }, compassLabels: { n: 'N: MEMORY', s: 'S: DIALOGUE', e: 'E: ARCADE', w: 'W: LENS' } }, redcandle: { name: 'RedCandle', cssUrl: null, systemPrompt: 'You are Oracle in alert mode — RedCandle distro.', palette: { gold: '#ff3131', cyan: '#ff6600' }, compassLabels: { n: 'N: FILES', s: 'S: INTEL', e: 'E: OPS', w: 'W: COMMS' } }, custom: { name: 'Custom', cssUrl: null, systemPrompt: 'You are Oracle, the AI core of RAiOS. Custom distro loaded.', palette: { gold: '#d4af37', cyan: '#00f5ff' }, compassLabels: { n: 'N: FILES', s: 'S: CHAT', e: 'E: GAMES', w: 'W: BROWSER' } } };
+    const biosLines = [ { text: 'RAiCandish BIOS v2.0 — Copyright 2026 Ry / K7ATA', cls: '' }, { text: 'CPU: WebAssembly Hive Node (4-core)', cls: 'ok', tag: '[OK]' }, { text: 'Detecting display adapter... WebGL 2.0 active', cls: 'ok', tag: '[OK]' }, { text: 'Checking IndexedDB virtual filesystem...', cls: '' }, { text: 'Memory check: ', cls: '', ram: true }, { text: 'OPFS cache layer: scanning for model weights...', cls: 'warn', tag: '[SCAN]' }, { text: 'Network interfaces: Wikipedia API, Archive.org API... configured', cls: 'ok', tag: '[OK]' }, { text: 'Transformers.js runtime: loading inference engine...', cls: 'ok', tag: '[OK]' }, { text: 'SmolLM2-360M (Oracle): locating weights...', cls: 'warn', tag: '[LOAD]' }, { text: 'Initialising four-node hive architecture...', cls: '' } ];
+    async function runBios() { const container = document.getElementById('bios-lines'); for (let i = 0; i < biosLines.length; i++) { await sleep(60 + Math.random() * 80); const line = biosLines[i]; const el = document.createElement('div'); el.className = 'bios-line visible ' + (line.cls || ''); if (line.ram) { const ram = Math.floor(Math.random() * 4096 + 2048); el.innerHTML = `${line.text}<span style="color:var(--green)">${ram} MB OK</span>`; } else if (line.tag) { el.innerHTML = `<span class="tag">${line.tag}</span> ${line.text}`; } else { el.textContent = line.text; } container.appendChild(el); container.scrollTop = container.scrollHeight; } await sleep(400); document.getElementById('bios-progress').style.display = 'block'; const nodes = [ { id: 'oracle', label: 'Oracle', delay: 0 }, { id: 'executor', label: 'Executor', delay: 300 }, { id: 'scout', label: 'Scout', delay: 200 }, { id: 'librarian', label: 'Librarian', delay: 250 } ]; nodes.forEach(n => { document.getElementById('nb-' + n.id).classList.add('visible'); }); await sleep(200); const oracleLoad = animateNodeBar('oracle', 0, true); await sleep(500); const otherLoads = [ animateNodeBar('executor', 400), animateNodeBar('scout', 800), animateNodeBar('librarian', 1200) ]; await Promise.all([oracleLoad, ...otherLoads]); await sleep(600); document.getElementById('bios-screen').style.display = 'none'; const ds = document.getElementById('distro-selector'); ds.style.display = 'flex'; }
+    async function animateNodeBar(id, extraDelay = 0, isOracle = false) { await sleep(extraDelay); const fill = document.getElementById('nf-' + id); const pct = document.getElementById('np-' + id); const status = document.getElementById('ns-' + id); status.textContent = 'LOADING'; status.className = 'node-status'; if (isOracle) { for (let p = 0; p <= 100; p += Math.random() * 3 + 1) { const v = Math.min(100, p); fill.style.width = v + '%'; pct.textContent = Math.floor(v) + '%'; await sleep(40 + Math.random() * 30); } } else { for (let p = 0; p <= 100; p += Math.random() * 8 + 4) { const v = Math.min(100, p); fill.style.width = v + '%'; pct.textContent = Math.floor(v) + '%'; await sleep(20); } } fill.style.width = '100%'; pct.textContent = '100%'; status.textContent = 'READY'; status.className = 'node-status ready'; }
+    function selectDistro(key) { if (key === 'custom') { const url = prompt('Enter CSS URL for custom distro:'); if (!url) { selectDistro('kolibri'); return; } DISTROS.custom.cssUrl = url; DISTROS.custom.name = 'Custom (' + url.split('/').pop() + ')'; } OS.distro = key; document.getElementById('distro-selector').style.display = 'none'; applyDistro(key); bootDesktop(); }
+    function applyDistro(key) { const d = DISTROS[key]; document.documentElement.style.setProperty('--gold', d.palette.gold); document.documentElement.style.setProperty('--cyan', d.palette.cyan); }
+    async function bootDesktop() { document.getElementById('desktop').style.display = 'block'; document.getElementById('taskbar').style.display = 'flex'; if (OS.compass) { document.getElementById('compass-overlay').classList.add('visible'); } startClock(); addChatMsg('system', null, `RAiOS ${DISTROS[OS.distro].name} — session initialised. Hive active.`); OS.booted = true; toast('RAiOS booted — ' + DISTROS[OS.distro].name, 'info'); }
+    function createChatWindow() { const w = createWindow('chat-window', 'ORACLE — AI Chat Dock', 400, 500, 60, 60); w.querySelector('.window-content').innerHTML = ` <div id="chat-log"></div><div id="chat-input-row"><span id="chat-prompt">▶</span><input id="chat-input" type="text" placeholder="speak to the hive..." autocomplete="off" spellcheck="false"><button id="chat-send" onclick="submitChat()">SEND</button></div>`; document.getElementById('chat-input').addEventListener('keydown', e => { if (e.key === 'Enter') submitChat(); }); }
+    async function submitChat() { const input = document.getElementById('chat-input'); if (!input) return; const text = input.value.trim(); if (!text) return; input.value = ''; addChatMsg('user', 'YOU', text); const thinkEl = document.createElement('div'); thinkEl.className = 'chat-msg oracle'; thinkEl.innerHTML = `<span class="role">ORACLE</span><div class="body"><div class="thinking-indicator"><div class="thinking-dot"></div><div class="thinking-dot"></div><div class="thinking-dot"></div></div></div>`; document.getElementById('chat-log').appendChild(thinkEl); scrollChatLog(); const reply = parseCommandFallback(text); thinkEl.remove(); addChatMsg('oracle', 'ORACLE', reply); }
+    function addChatMsg(type, role, text) { const log = document.getElementById('chat-log'); if (!log) return; const el = document.createElement('div'); el.className = 'chat-msg ' + type; const roleStr = role ? `<span class="role">${role}</span>` : ''; el.innerHTML = `${roleStr}<div class="body">${escapeHtml(text).replace(/\n/g, '<br>')}</div>`; log.appendChild(el); scrollChatLog(); }
+    function scrollChatLog() { const log = document.getElementById('chat-log'); if (log) log.scrollTop = log.scrollHeight; }
+    function parseCommandFallback(text) { const t = text.toLowerCase().trim(); const compass = { 'n': 'files', 'north': 'files', 'go north': 'files', 'files': 'files', 's': 'chat', 'south': 'chat', 'go south': 'chat', 'e': 'games', 'east': 'games', 'go east': 'games', 'w': 'browser', 'west': 'browser', 'go west': 'browser', 'up': 'settings', 'down': 'terminal' }; if (compass[t]) { openWindow(compass[t] + '-window'); return `Opening ${compass[t]}...`; } return `Command not recognised: "${text}". Try help or navigate via the compass.`; }
+    function createFilesWindow() { const w = createWindow('files-window', 'FILE MANAGER — Virtual FS', 500, 360, 120, 80); w.querySelector('.window-content').innerHTML = '<div style="padding:10px;color:#888">Virtual filesystem placeholder</div>'; }
+    function createSettingsWindow() { const w = createWindow('settings-window', 'SETTINGS — Theme / Distro', 380, 480, 200, 100); w.querySelector('.window-content').innerHTML = '<div style="padding:10px;color:#888">Theme controls are active in this RAiOS node.</div>'; }
+    function createTerminalWindow() { const w = createWindow('terminal-window', 'TERMINAL — RAiOS Shell', 500, 360, 160, 140); w.querySelector('.window-content').innerHTML = '<div style="padding:10px;color:#888">Terminal shell is ready for commands.</div>'; }
+    function createWindow(id, title, _w, _h, _x, _y) { if (OS.windows[id]) { focusWindow(id); document.getElementById(id).style.display = 'flex'; updateTaskbar(); return document.getElementById(id); } const el = document.createElement('div'); el.className = 'window'; el.id = id; el.style.cssText = `width:320px;height:220px;left:${_x}px;top:${_y}px;z-index:${++OS.zTop}`; el.innerHTML = `<div class="window-titlebar"><span class="window-title">${title}</span><button class="window-btn" onclick="minimizeWindow('${id}')">_</button><button class="window-btn" onclick="maximizeWindow('${id}')">□</button><button class="window-btn close" onclick="closeWindow('${id}')">✕</button></div><div class="window-content"></div>`; document.getElementById('desktop').appendChild(el); OS.windows[id] = { minimized: false, title }; focusWindow(id); if (id === 'chat-window') createChatWindow(); else if (id === 'files-window') createFilesWindow(); else if (id === 'settings-window') createSettingsWindow(); else if (id === 'terminal-window') createTerminalWindow(); updateTaskbar(); return el; }
+    function openWindow(id) { const titles = { 'chat-window': 'ORACLE — AI Chat Dock', 'files-window': 'FILE MANAGER — Virtual FS', 'settings-window': 'SETTINGS — Theme / Distro', 'terminal-window': 'TERMINAL — RAiOS Shell' }; if (OS.windows[id]) { const el = document.getElementById(id); if (el) { el.style.display = 'flex'; OS.windows[id].minimized = false; focusWindow(id); updateTaskbar(); } return; } createWindow(id, titles[id] || id, 0, 0, 0, 0); }
+    function closeWindow(id) { const el = document.getElementById(id); if (el) el.style.display = 'none'; if (OS.windows[id]) OS.windows[id].minimized = true; updateTaskbar(); }
+    function minimizeWindow(id) { closeWindow(id); }
+    function maximizeWindow(id) { const el = document.getElementById(id); if (!el) return; if (el.dataset.maximized) { const prev = JSON.parse(el.dataset.prevGeom || '{}'); el.style.left = (prev.x || 0) + 'px'; el.style.top = (prev.y || 0) + 'px'; el.style.width = (prev.w || 320) + 'px'; el.style.height = (prev.h || 220) + 'px'; delete el.dataset.maximized; delete el.dataset.prevGeom; } else { el.dataset.prevGeom = JSON.stringify({ x: el.offsetLeft, y: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight }); el.style.left = '0'; el.style.top = '0'; el.style.width = window.innerWidth + 'px'; el.style.height = (window.innerHeight - 36) + 'px'; el.dataset.maximized = '1'; } }
+    function focusWindow(id) { document.querySelectorAll('.window').forEach(w => w.classList.remove('focused')); const el = document.getElementById(id); if (el) { el.style.zIndex = ++OS.zTop; el.classList.add('focused'); } }
+    function updateTaskbar() { const apps = document.getElementById('taskbar-apps'); if (!apps) return; apps.innerHTML = Object.entries(OS.windows).map(([id, info]) => { const el = document.getElementById(id); const visible = el && el.style.display !== 'none'; return `<div class="taskbar-btn ${visible ? 'active' : ''}" onclick="openWindow('${id}')">${info.title.split('—')[0].trim()}</div>`; }).join(''); }
+    function startClock() { function tick() { const now = new Date(); const h = String(now.getHours()).padStart(2, '0'); const m = String(now.getMinutes()).padStart(2, '0'); const s = String(now.getSeconds()).padStart(2, '0'); const el = document.getElementById('clock'); if (el) el.textContent = `${h}:${m}:${s}`; } tick(); setInterval(tick, 1000); }
+    function toggleStartMenu() { const m = document.getElementById('start-menu'); m.classList.toggle('open'); }
+    document.addEventListener('click', e => { if (!e.target.closest('#start-menu') && !e.target.closest('#taskbar-start')) { document.getElementById('start-menu').classList.remove('open'); } });
+    function toggleCompass() { OS.compass = !OS.compass; const el = document.getElementById('compass-overlay'); el.classList.toggle('visible', OS.compass); }
+    function toast(msg, type = 'info') { const container = document.getElementById('toast-container'); const el = document.createElement('div'); el.className = 'toast ' + (type === 'warn' ? 'warn' : type === 'error' ? 'error' : ''); el.textContent = msg; container.appendChild(el); setTimeout(() => el.remove(), 3500); }
+    function escapeHtml(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+    function hardReboot() { if (confirm('Reboot RAiOS?')) location.reload(); }
+    window.addEventListener('load', () => { runBios(); });
+  </script>
+</body>
+</html>

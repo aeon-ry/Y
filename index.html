@@ -202,6 +202,12 @@
             transform: translateX(5px);
         }
 
+        .card.active {
+            border-color: var(--gold-bright);
+            box-shadow: 0 0 20px rgba(200, 151, 26, 0.25);
+            background: linear-gradient(90deg, rgba(200, 151, 26, 0.14), rgba(7, 15, 26, 0.95));
+        }
+
         .card-details {
             display: flex;
             flex-direction: column;
@@ -355,6 +361,67 @@
         .footer-action:hover {
             color: var(--gold-bright);
         }
+
+        .site-nav {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .site-nav a {
+            color: var(--text-dim);
+            text-decoration: none;
+            padding: 4px 8px;
+            border: 1px solid transparent;
+            border-radius: 3px;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+        }
+
+        .site-nav a:hover,
+        .site-nav a.active {
+            color: var(--gold-bright);
+            border-color: var(--gold);
+            background: rgba(200, 151, 26, 0.12);
+        }
+
+        @media (max-width: 900px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+                padding: 20px;
+            }
+
+            main {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+
+            .selector-area {
+                gap: 14px;
+            }
+
+            .card {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .card-details {
+                max-width: 100%;
+            }
+
+            footer {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                padding: 15px 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -377,6 +444,17 @@
         <div class="header-left">
             <h1>RAiOS Mainframe Multi-Bootloader</h1>
             <p>Unified kernel selector / sovereign system manager</p>
+            <nav class="site-nav">
+                <a href="index.html" class="active">Home</a>
+                <a href="RAilingua.html">RAi Archive</a>
+                <a href="ninjastar.html">NinjaStar</a>
+                <a href="ry-rai-ri.html">RY/RAI/RI</a>
+                <a href="raios-v1.html">RAiOS v1.0</a>
+                <a href="kurai-edition.html">Kurai Edition</a>
+                <a href="kali-os.html">KALI OS</a>
+                <a href="raios-v4.html">RAiOS v4</a>
+                <a href="rai-archive.html">RAi Archive OS</a>
+            </nav>
         </div>
         <div class="header-right">
             <div id="clock">--:--:--</div>
@@ -411,7 +489,7 @@
             <div class="panel-title" style="margin-top:10px;">Audit logger</div>
             <div class="sys-log" id="log-console">
                 <div class="log-entry">> Initializing Multi-Bootloader...</div>
-                <div class="log-entry">> Modules found: 3 Kernels compiled.</div>
+                <div class="log-entry">> Modules found: 5 Kernels compiled.</div>
                 <div class="log-entry">> Ready for kernel bootstrap.</div>
             </div>
         </div>
@@ -420,7 +498,7 @@
             <div class="panel-title">Available Kernels (DOS to Modern AI UI)</div>
 
             <!-- Kernel 1 -->
-            <div class="card" onclick="loadKernel('1')">
+            <div class="card" data-kernel-id="1" onclick="loadKernel('1')">
                 <div class="card-details">
                     <span class="card-tag tag-retro">Kernel I · VT323 CRT Shell</span>
                     <h2 class="card-title">RAiOS v1.0 (Terminal System)</h2>
@@ -430,7 +508,7 @@
             </div>
 
             <!-- Kernel 2 -->
-            <div class="card" onclick="loadKernel('2')">
+            <div class="card" data-kernel-id="2" onclick="loadKernel('2')">
                 <div class="card-details">
                     <span class="card-tag tag-kurai">Kernel II · Japanese Zen GUI</span>
                     <h2 class="card-title">RAiOS Kurai Edition (Windowed OS)</h2>
@@ -440,11 +518,31 @@
             </div>
 
             <!-- Kernel 3 -->
-            <div class="card" onclick="loadKernel('3')">
+            <div class="card" data-kernel-id="3" onclick="loadKernel('3')">
                 <div class="card-details">
                     <span class="card-tag tag-kali">Kernel III · Cyberpunk Neon IDE</span>
                     <h2 class="card-title">KALI OS (Self-Assembling operating system)</h2>
                     <p class="card-desc">High-contrast purple/cyan neon development board with real-time log monitoring, source code inspectors, package managers, and dynamic self-compiling quine engines.</p>
+                </div>
+                <button class="card-action">Bootstrap</button>
+            </div>
+
+            <!-- Kernel 4 -->
+            <div class="card" data-kernel-id="4" onclick="loadKernel('4')">
+                <div class="card-details">
+                    <span class="card-tag tag-retro">Kernel IV · Functional Desktop Shell</span>
+                    <h2 class="card-title">RAiOS v4 (Windowed OS)</h2>
+                    <p class="card-desc">A more practical desktop-style environment with status bar, windows, file browser, text editor, and terminal modules.</p>
+                </div>
+                <button class="card-action">Bootstrap</button>
+            </div>
+
+            <!-- Kernel 5 -->
+            <div class="card" data-kernel-id="5" onclick="loadKernel('5')">
+                <div class="card-details">
+                    <span class="card-tag tag-kurai">Kernel V · Archive Knowledge OS</span>
+                    <h2 class="card-title">RAi Archive OS</h2>
+                    <p class="card-desc">An archive-first knowledge environment for agents, ideas, companion prompts, and layered identity fragments.</p>
                 </div>
                 <button class="card-action">Bootstrap</button>
             </div>
@@ -465,6 +563,25 @@
         };
 
         let activeKernelId = null;
+        const bootState = {
+            lastKernelId: localStorage.getItem('raios-last-kernel') || null
+        };
+
+        function highlightKernelCard(id) {
+            document.querySelectorAll('.card').forEach(card => {
+                card.classList.toggle('active', card.dataset.kernelId === id);
+            });
+        }
+
+        function setBootStatus(msg) {
+            const consoleEl = document.getElementById('log-console');
+            if (!consoleEl) return;
+            const d = document.createElement('div');
+            d.className = 'log-entry';
+            d.innerText = '> ' + msg;
+            consoleEl.appendChild(d);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
 
         // Clock Script
         function updateClock() {
@@ -485,19 +602,34 @@
 
         // Kernel Loading mechanism
         function loadKernel(id) {
+            if (!KERNELS[id]) return;
             addLog("Booting Kernel " + id + "...");
             activeKernelId = id;
-            
-            const b64Data = KERNELS[id];
-            const decoded = atob(b64Data);
-            
+            bootState.lastKernelId = id;
+            localStorage.setItem('raios-last-kernel', id);
+            highlightKernelCard(id);
+
             const iframe = document.getElementById('kernel-iframe');
-            
-            // Populating srcdoc handles local resources and script execution cleanly
-            iframe.srcdoc = decoded;
-            
+            const kernelMap = {
+                "1": "raios-v1.html",
+                "2": "kurai-edition.html",
+                "3": "kali-os.html",
+                "4": "raios-v4.html",
+                "5": "rai-archive.html"
+            };
+            const target = kernelMap[id] || KERNELS[id];
+            if (target && target.endsWith('.html')) {
+                iframe.removeAttribute('srcdoc');
+                iframe.src = target;
+            } else {
+                iframe.removeAttribute('src');
+                const decoded = atob(target);
+                iframe.srcdoc = decoded;
+            }
             document.getElementById('iframe-host').style.display = 'block';
+            document.getElementById('kernel-controller').classList.add('visible');
             addLog("Kernel " + id + " bootstrapped successfully.");
+            setBootStatus("Kernel " + id + " is now active.");
         }
 
         function unloadKernel() {
@@ -507,7 +639,9 @@
             iframe.srcdoc = "";
             document.getElementById('iframe-host').style.display = 'none';
             document.getElementById('kernel-controller').classList.remove('visible');
+            highlightKernelCard(null);
             addLog("Kernel unloaded. Returned to main bootloader.");
+            setBootStatus("Boot menu restored.");
             activeKernelId = null;
         }
 
@@ -566,6 +700,21 @@
                 }
             }
         });
+
+        document.addEventListener('keydown', (e) => {
+            if (['1','2','3'].includes(e.key)) {
+                e.preventDefault();
+                loadKernel(e.key);
+            }
+            if (e.key === 'Escape') {
+                unloadKernel();
+            }
+        });
+
+        if (bootState.lastKernelId) {
+            addLog('Previous session detected: Kernel ' + bootState.lastKernelId);
+            highlightKernelCard(bootState.lastKernelId);
+        }
 
         // Master Quine (Saves the entire compiler file containing base64 codes!)
         function commitQuine() {

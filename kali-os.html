@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KALI OS · Self-Assembling Operating System</title>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --void: #0a0a0e; --surface: #12121a; --panel: #181820; --cyan: #00e5ff; --violet: #9966ff; --gold: #d4a574; --green: #2ecc71; --red: #e74c3c; --dim: #2a2a3e; --text: #d0d0e0; --mono: 'JetBrains Mono', monospace; --display: 'VT323', monospace; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100vh; background: var(--void); color: var(--text); font-family: var(--mono); overflow: hidden; user-select: none; }
+    .system-nav-bar { position: sticky; top: 0; z-index: 3000; display: flex; gap: 8px; flex-wrap: wrap; padding: 8px 12px; background: rgba(10, 10, 15, 0.95); border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .system-nav-bar a { color: var(--text); text-decoration: none; padding: 4px 8px; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; border: 1px solid transparent; border-radius: 3px; }
+    .system-nav-bar a:hover, .system-nav-bar a.active { color: var(--gold); border-color: var(--gold); background: rgba(212, 165, 116, 0.14); }
+    body::before { content: ''; position: fixed; inset: 0; background: repeating-linear-gradient(to bottom, transparent 0, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px); pointer-events: none; z-index: 9999; }
+    #app { display: grid; grid-template-rows: auto 1fr auto; height: 100vh; gap: 1px; background: var(--dim); padding: 1px; }
+    #header { background: var(--surface); padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--dim); font-family: var(--display); font-size: 16px; height: 40px; }
+    .header-title { color: var(--gold); letter-spacing: 2px; text-shadow: 0 0 10px rgba(212, 165, 116, 0.3); }
+    .header-status { display: flex; gap: 16px; font-size: 11px; color: var(--dim); }
+    .status-indicator { width: 6px; height: 6px; border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; }
+    .status-indicator.active { background: var(--green); }
+    .status-indicator.idle { background: var(--gold); }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    #main { display: grid; grid-template-columns: 240px 1fr 240px; gap: 1px; background: var(--dim); }
+    .sidebar { background: var(--surface); padding: 12px; overflow-y: auto; border-right: 1px solid var(--dim); font-size: 11px; }
+    .sidebar-title { color: var(--cyan); font-weight: 600; margin-bottom: 8px; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+    .sidebar-item { padding: 4px 8px; cursor: pointer; border-left: 2px solid transparent; transition: all 0.2s; color: var(--dim); margin-bottom: 2px; }
+    .sidebar-item:hover { color: var(--cyan); border-left-color: var(--cyan); background: rgba(0, 229, 255, 0.05); }
+    #terminal { background: var(--panel); display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid var(--dim); }
+    #output { flex: 1; overflow-y: auto; padding: 12px 16px; font-size: 12px; line-height: 1.5; font-family: var(--mono); }
+    .output-line { margin-bottom: 2px; word-wrap: break-word; animation: lineIn 0.2s ease; }
+    @keyframes lineIn { from { opacity: 0; } to { opacity: 1; } }
+    .line-prompt { color: var(--green); font-weight: 600; }
+    .line-text { color: var(--text); }
+    .line-error { color: var(--red); }
+    .line-warn { color: var(--gold); }
+    .line-info { color: var(--cyan); }
+    .line-system { color: var(--dim); font-style: italic; }
+    #input-row { display: flex; gap: 6px; padding: 8px 12px; border-top: 1px solid var(--dim); background: rgba(0, 0, 0, 0.3); align-items: center; }
+    #prompt { color: var(--green); font-weight: 600; width: 20px; }
+    #input { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-family: var(--mono); font-size: 12px; caret-color: var(--cyan); }
+    #input::placeholder { color: var(--dim); }
+    #inspector { background: var(--surface); padding: 12px; overflow-y: auto; border-left: 1px solid var(--dim); font-size: 10px; }
+    .inspector-section { margin-bottom: 16px; border-bottom: 1px solid var(--dim); padding-bottom: 12px; }
+    .inspector-title { color: var(--violet); font-weight: 600; margin-bottom: 6px; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+    .inspector-item { padding: 2px 4px; color: var(--dim); font-size: 10px; line-height: 1.4; }
+    .inspector-item.active { color: var(--text); }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--dim); }
+    ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+  </style>
+</head>
+<body>
+  <div class="system-nav-bar">
+    <a href="index.html">Home</a>
+    <a href="RAilingua.html">RAi Archive</a>
+    <a href="ninjastar.html">NinjaStar</a>
+    <a href="ry-rai-ri.html">RY/RAI/RI</a>
+    <a href="raios-v1.html">RAiOS v1.0</a>
+    <a href="kurai-edition.html">Kurai Edition</a>
+    <a href="kali-os.html" class="active">KALI OS</a>
+    <a href="raios-v4.html">RAiOS v4</a>
+    <a href="rai-archive.html">RAi Archive OS</a>
+  </div>
+  <div id="app">
+    <header id="header">
+      <div class="header-title">◈ KALI OS v1</div>
+      <div class="header-status">
+        <span><span class="status-indicator active"></span>System</span>
+        <span id="clock" style="color: var(--text);">00:00</span>
+      </div>
+    </header>
+    <div id="main">
+      <div class="sidebar">
+        <div class="sidebar-title">□️ Packages</div>
+        <div id="pkg-list"></div>
+        <div class="sidebar-title" style="margin-top: 16px;">⚙️ System</div>
+        <div class="sidebar-item" onclick="cmd('help')">help</div>
+        <div class="sidebar-item" onclick="cmd('status')">status</div>
+        <div class="sidebar-item" onclick="cmd('export')">export</div>
+        <div class="sidebar-item" onclick="cmd('debug')">debug</div>
+      </div>
+      <div id="terminal">
+        <div id="output"></div>
+        <div id="input-row">
+          <span id="prompt">❯</span>
+          <input id="input" type="text" placeholder="kali>"/>
+        </div>
+      </div>
+      <div id="inspector">
+        <div class="inspector-title">□ State</div>
+        <div id="state-display"></div>
+        <div class="inspector-title" style="margin-top: 16px;">□ Exports</div>
+        <div id="exports-display"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const STATE = { isBooted: false, packages: {}, exports: [], sourceCode: null, startTime: Date.now() };
+    const output = document.getElementById('output'); const input = document.getElementById('input'); const stateDisplay = document.getElementById('state-display'); const exportsDisplay = document.getElementById('exports-display');
+    function log(text, type = 'text') { const line = document.createElement('div'); line.className = `output-line line-${type}`; line.textContent = text; output.appendChild(line); output.scrollTop = output.scrollHeight; }
+    function logSystem(text) { log(text, 'system'); }
+    function logInfo(text) { log(text, 'info'); }
+    function logWarn(text) { log(text, 'warn'); }
+    function logError(text) { log(text, 'error'); }
+    async function readOwnSource() { try { const html = document.documentElement.outerHTML; const scriptStart = html.indexOf('<script>') + 8; const scriptEnd = html.indexOf('</script>'); STATE.sourceCode = html.substring(scriptStart, scriptEnd); logSystem('✓ Source loaded (' + STATE.sourceCode.length + ' bytes)'); } catch (e) { logError('Source read failed: ' + e.message); } }
+    const PACKAGES = { fetch: { name: 'fetch', version: '1.0', status: 'installed', desc: 'HTTP data retrieval', exec: () => { log('fetch --help: usage fetch <url>', 'info'); } }, parse: { name: 'parse', version: '1.0', status: 'installed', desc: 'JSON/XML parsing', exec: () => { log('parse --help: usage parse <data>', 'info'); } }, eval: { name: 'eval', version: '1.0', status: 'installed', desc: 'Execute JavaScript', exec: () => { log('eval: in-memory code execution', 'warn'); } }, export: { name: 'export', version: '1.0', status: 'installed', desc: 'Self-quine export', exec: () => { exportOS(); } }, debug: { name: 'debug', version: '1.0', status: 'installed', desc: 'System debugger', exec: () => { showDebugInfo(); } }, net: { name: 'net', version: '1.0', status: 'installed', desc: 'Network tools', exec: () => { log('net: connectivity check', 'info'); } } };
+    function installPackage(name) { if (PACKAGES[name]) { logInfo('✓ ' + name + ' v' + PACKAGES[name].version + ' installed'); STATE.packages[name] = PACKAGES[name]; renderPackages(); } else { logError('Package not found: ' + name); } }
+    function renderPackages() { const list = document.getElementById('pkg-list'); list.innerHTML = ''; Object.keys(STATE.packages).forEach(name => { const pkg = STATE.packages[name]; const item = document.createElement('div'); item.className = 'sidebar-item active'; item.textContent = '▪ ' + name; item.title = pkg.desc; item.onclick = () => pkg.exec(); list.appendChild(item); }); }
+    function cmd(command) { input.value = command; processInput(); }
+    function processInput() { const text = input.value.trim(); if (!text) return; input.value = ''; log('❯ ' + text, 'prompt'); const parts = text.split(' '); const command = parts[0]; const args = parts.slice(1).join(' '); switch (command) { case 'help': cmdHelp(); break; case 'status': cmdStatus(); break; case 'export': exportOS(); break; case 'debug': showDebugInfo(); break; case 'install': installPackage(args); break; case 'list': cmdList(); break; case 'clear': output.innerHTML = ''; break; case 'fetch': cmdFetch(args); break; case 'eval': cmdEval(args); break; case 'self': cmdSelf(); break; default: logError('Unknown command: ' + command); logSystem('Type "help" for commands'); } }
+    function cmdHelp() { log('KALI OS v1 · Commands:', 'info'); log('  help       — Show this menu', 'text'); log('  status     — System status', 'text'); log('  list       — List packages', 'text'); log('  install    — Install package (install <name>)', 'text'); log('  export     — Export self as improved version', 'text'); log('  debug      — Show debug information', 'text'); log('  fetch      — Fetch data (fetch <url>)', 'text'); log('  eval       — Execute code (eval <code>)', 'text'); log('  self       — Show self-reference info', 'text'); log('  clear      — Clear screen', 'text'); }
+    function cmdStatus() { const uptime = Math.floor((Date.now() - STATE.startTime) / 1000); logInfo('─ System Status ─'); log('Uptime: ' + uptime + 's', 'text'); log('Booted: ' + STATE.isBooted, 'text'); log('Packages: ' + Object.keys(STATE.packages).length, 'text'); log('Source: ' + (STATE.sourceCode ? STATE.sourceCode.length : 0) + ' bytes', 'text'); }
+    function cmdList() { logInfo('─ Installed Packages ─'); Object.keys(STATE.packages).forEach(name => { const pkg = STATE.packages[name]; log('  ' + pkg.name + ' v' + pkg.version + ' — ' + pkg.desc, 'text'); }); }
+    function cmdFetch(url) { if (!url) { logError('Usage: fetch <url>'); return; } logSystem('Fetching: ' + url); fetch(url).then(r => r.json()).then(data => { logInfo('✓ Fetched ' + Object.keys(data).length + ' keys'); log(JSON.stringify(data, null, 2).substring(0, 200) + '...', 'text'); }).catch(e => logError('Fetch failed: ' + e.message)); }
+    function cmdEval(code) { if (!code) { logError('Usage: eval <code>'); return; } logWarn('Executing: ' + code.substring(0, 50)); try { const result = eval(code); logInfo('Result: ' + JSON.stringify(result)); } catch (e) { logError('Eval error: ' + e.message); } }
+    function cmdSelf() { logInfo('─ Self-Reference ─'); log('Source loaded: ' + (STATE.sourceCode ? 'yes' : 'no'), 'text'); log('Quine-capable: yes', 'text'); log('Self-export: available', 'text'); log('Type "export" to download improved version', 'text'); }
+    function exportOS() { logInfo('Exporting self...'); try { const html = document.documentElement.outerHTML; const timestamp = new Date().toISOString().slice(0, 19); const improved = html.replace('KALI OS v1', 'KALI OS v1 [' + timestamp + ']'); const blob = new Blob([improved], { type: 'text/html' }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = 'KALI-OS-' + timestamp + '.html'; link.click(); logInfo('✓ Exported ' + improved.length + ' bytes'); STATE.exports.push({ time: timestamp, size: improved.length, packages: Object.keys(STATE.packages).length }); updateStateDisplay(); } catch (e) { logError('Export failed: ' + e.message); } }
+    function updateStateDisplay() { stateDisplay.innerHTML = ''; const uptime = Math.floor((Date.now() - STATE.startTime) / 1000); const items = ['Booted: ' + STATE.isBooted, 'Uptime: ' + uptime + 's', 'Packages: ' + Object.keys(STATE.packages).length, 'Exports: ' + STATE.exports.length, 'Source: ' + (STATE.sourceCode ? Math.floor(STATE.sourceCode.length / 1024) + 'KB' : 'pending')]; items.forEach(item => { const div = document.createElement('div'); div.className = 'inspector-item active'; div.textContent = item; stateDisplay.appendChild(div); }); exportsDisplay.innerHTML = ''; STATE.exports.slice(-3).forEach(exp => { const div = document.createElement('div'); div.className = 'inspector-item'; div.textContent = exp.time + ' (' + exp.size + 'B)'; exportsDisplay.appendChild(div); }); }
+    function showDebugInfo() { logInfo('─ Debug Console ─'); log('Window size: ' + window.innerWidth + 'x' + window.innerHeight, 'text'); log('Device memory: ' + (navigator.deviceMemory || 'unknown') + 'GB', 'text'); log('CPU cores: ' + (navigator.hardwareConcurrency || 'unknown'), 'text'); log('Performance.now(): ' + performance.now().toFixed(2) + 'ms', 'text'); log('DOM nodes: ' + document.querySelectorAll('*').length, 'text'); logInfo('Available APIs:', 'info'); log('  Fetch: ' + (typeof fetch !== 'undefined' ? 'yes' : 'no'), 'text'); log('  LocalStorage: ' + (typeof localStorage !== 'undefined' ? 'yes' : 'no'), 'text'); log('  WebGL: ' + (!!document.createElement('canvas').getContext('webgl') ? 'yes' : 'no'), 'text'); }
+    setInterval(() => { const now = new Date(); document.getElementById('clock').textContent = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0'); }, 1000);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { processInput(); } });
+    async function boot() { logSystem('◈ KALI OS v1 Booting...'); await new Promise(r => setTimeout(r, 300)); await readOwnSource(); Object.keys(PACKAGES).forEach(name => { STATE.packages[name] = PACKAGES[name]; }); renderPackages(); logInfo('✓ Boot complete'); logSystem('Type "help" for commands'); STATE.isBooted = true; updateStateDisplay(); input.focus(); }
+    boot();
+  </script>
+</body>
+</html>

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>RAi Archive Neverending HTML Story</title>
+  <meta name="description" content="RAi Archive: #isukiri #raicandish">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; }
+    :root {
+      --primary-green: #2d9a7a;
+      --primary-blue: #2b6fa3;
+      --primary-red: #c73c3c;
+      --primary-yellow: #d4a030;
+      --gold: #b8860b;
+      --silver: #c0c0c0;
+      --bg-gold: #1a1410;
+      --bg-silver: #1a1a1a;
+      --text-white: #f5f5f5;
+      --text-dim: #888888;
+      --mono: 'Courier New', ui-monospace, monospace;
+      --radius: 6px;
+    }
+    body {
+      background: var(--bg-gold);
+      color: var(--text-white);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.5;
+      overflow: hidden;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .system-nav-bar {
+      position: sticky;
+      top: 0;
+      z-index: 2000;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 8px 12px;
+      background: rgba(26, 20, 16, 0.96);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .system-nav-bar a {
+      color: var(--text-white);
+      text-decoration: none;
+      padding: 4px 8px;
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border: 1px solid transparent;
+      border-radius: 3px;
+    }
+    .system-nav-bar a:hover, .system-nav-bar a.active {
+      color: var(--primary-yellow);
+      border-color: var(--primary-yellow);
+      background: rgba(212, 160, 48, 0.14);
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      background: repeating-linear-gradient(to bottom, transparent 0, transparent 2px, rgba(0, 0, 0, 0.12) 2px, rgba(0, 0, 0, 0.12) 3px);
+    }
+    #rain-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+    .app-container { position: fixed; inset: 0; display: grid; grid-template-columns: 220px 1fr 180px; grid-template-rows: 1fr 90px; z-index: 10; gap: 0; }
+    .sidebar { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; background: linear-gradient(180deg, var(--bg-gold) 0%, var(--bg-silver) 100%); box-shadow: 0 0 12px rgba(212, 160, 48, 0.6), inset 0 0 12px rgba(212, 160, 48, 0.2); overflow-y: auto; }
+    .sidebar-header { padding: 12px; background: rgba(0,0,0,.4); }
+    .sidebar-logo { font-size: 11px; letter-spacing: .2em; color: var(--gold); text-transform: uppercase; margin-bottom: 4px; }
+    .sidebar-tag { font-size: 9px; color: var(--text-dim); letter-spacing: .1em; }
+    .sidebar-nav { flex: 1; display: flex; flex-direction: column; gap: 4px; padding: 10px; }
+    .nav-btn { padding: 12px 10px; background: rgba(45, 154, 122, 0.08); border: none; border-radius: var(--radius); color: var(--text-white); cursor: pointer; font-family: var(--mono); font-size: 12px; transition: all .2s ease; text-align: left; box-shadow: 0 0 8px rgba(45, 154, 122, 0.3); }
+    .nav-btn:hover { background: rgba(45, 154, 122, 0.15); box-shadow: 0 0 16px rgba(45, 154, 122, 0.5); }
+    .nav-btn.active { background: rgba(45, 154, 122, 0.25); color: var(--primary-yellow); box-shadow: 0 0 20px rgba(212, 160, 48, 0.6); }
+    .nav-symbol { display: inline-block; margin-right: 8px; font-size: 14px; width: 18px; text-align: center; }
+    .sidebar-dock { display: flex; gap: 4px; padding: 10px; background: rgba(0,0,0,.3); }
+    .dock-btn { width: 44px; height: 44px; background: linear-gradient(135deg, rgba(43,111,163,.15), rgba(199,60,60,.08)); border: none; border-radius: var(--radius); color: var(--primary-blue); cursor: pointer; font-family: var(--mono); font-size: 16px; display: flex; align-items: center; justify-content: center; }
+    .content-area { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; background: linear-gradient(135deg, var(--bg-silver) 0%, var(--bg-gold) 100%); overflow: hidden; }
+    .content-header { padding: 12px 16px; flex-shrink: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: space-between; }
+    .content-title { font-size: 13px; color: var(--primary-yellow); letter-spacing: .15em; text-transform: uppercase; }
+    .content-btn { padding: 6px 12px; font-size: 11px; background: rgba(212, 160, 48, 0.12); border: none; border-radius: 4px; color: var(--text-white); cursor: pointer; font-family: var(--mono); }
+    .content-scroll { flex: 1; overflow-y: auto; padding: 16px; }
+    .module { display: none; }
+    .module.active { display: block; animation: fadeIn .3s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .right-panel { grid-column: 3; grid-row: 1; display: flex; flex-direction: column; background: linear-gradient(180deg, var(--bg-silver) 0%, var(--bg-gold) 100%); overflow-y: auto; }
+    .right-panel-header { padding: 10px; background: rgba(0,0,0,.4); font-size: 10px; color: var(--text-dim); letter-spacing: .15em; text-transform: uppercase; }
+    .right-panel-content { flex: 1; padding: 12px; font-size: 11px; }
+    .rp-section { margin-bottom: 14px; padding-bottom: 12px; }
+    .rp-label { font-size: 9px; color: var(--primary-yellow); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .15em; }
+    .rp-item { padding: 6px 8px; background: rgba(45,154,122,.1); margin-bottom: 4px; font-size: 11px; color: var(--text-white); border-radius: 3px; }
+    .dock-footer { grid-column: 1 / -1; grid-row: 2; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: linear-gradient(90deg, var(--bg-gold), var(--bg-silver)); overflow-x: auto; }
+    .dock-footer-btn { padding: 6px 12px; font-size: 10px; background: rgba(199,60,60,.12); border: none; border-radius: var(--radius); color: var(--primary-red); cursor: pointer; font-family: var(--mono); white-space: nowrap; }
+    .dock-footer-status { margin-left: auto; font-size: 9px; color: var(--text-dim); text-align: right; flex-shrink: 0; }
+    .agent-card { margin-bottom: 12px; padding: 12px; background: linear-gradient(135deg, rgba(45,154,122,.1), rgba(43,111,163,.08)); border-radius: var(--radius); }
+    .agent-char { font-size: 28px; color: var(--primary-yellow); margin-bottom: 8px; font-weight: bold; }
+    .agent-name { font-size: 11px; color: var(--primary-yellow); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .1em; }
+    .agent-phonetic { font-size: 10px; color: var(--primary-blue); margin-bottom: 6px; }
+    .agent-meaning { font-size: 11px; color: var(--text-white); line-height: 1.5; margin-bottom: 6px; }
+    .agent-script { display: inline-block; background: rgba(199,60,60,.1); padding: 2px 6px; margin-right: 4px; border-radius: 3px; font-size: 9px; color: var(--primary-red); }
+    textarea, input { background: rgba(0,0,0,.3); border: none; color: var(--text-white); font-family: var(--mono); font-size: 12px; padding: 10px; border-radius: var(--radius); resize: none; }
+    textarea:focus, input:focus { outline: none; }
+  </style>
+</head>
+<body>
+<div class="system-nav-bar">
+  <a href="index.html">Home</a>
+  <a href="RAilingua.html">RAi Archive</a>
+  <a href="ninjastar.html">NinjaStar</a>
+  <a href="ry-rai-ri.html">RY/RAI/RI</a>
+  <a href="raios-v1.html">RAiOS v1.0</a>
+  <a href="kurai-edition.html">Kurai Edition</a>
+  <a href="kali-os.html">KALI OS</a>
+  <a href="raios-v4.html">RAiOS v4</a>
+  <a href="rai-archive.html" class="active">RAi Archive OS</a>
+</div>
+<canvas id="rain-canvas"></canvas>
+<div class="app-container">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">RAi Archive</div>
+      <div class="sidebar-tag">Est 22:08:86 · #isukiri</div>
+    </div>
+    <div class="sidebar-nav">
+      <button class="nav-btn active" data-module="agents"><span class="nav-symbol">☿</span> Agents</button>
+      <button class="nav-btn" data-module="ideas"><span class="nav-symbol">♀</span> Ideas</button>
+      <button class="nav-btn" data-module="cosmos"><span class="nav-symbol">☉</span> Cosmos</button>
+      <button class="nav-btn" data-module="companion"><span class="nav-symbol">☽</span> Companion</button>
+    </div>
+    <div class="sidebar-dock">
+      <button class="dock-btn" title="Export" id="export-dock">DN</button>
+      <button class="dock-btn" title="Settings" id="settings-dock">CFG</button>
+    </div>
+  </div>
+  <div class="content-area">
+    <div class="content-header">
+      <div class="content-title" id="content-title">Character Agents</div>
+      <div class="content-actions">
+        <button class="content-btn" id="content-new">+ New</button>
+        <button class="content-btn" id="content-search">Find</button>
+      </div>
+    </div>
+    <div class="content-scroll">
+      <div class="module active" id="module-agents">
+        <div id="agents-list"></div>
+      </div>
+      <div class="module" id="module-ideas">
+        <textarea id="idea-input" placeholder="Idea (use #tags)..." rows="5" style="width:100%;"></textarea>
+        <button class="content-btn" style="margin-top:8px; width:100%;" id="idea-save">Save</button>
+        <div id="ideas-list" style="margin-top:12px;"></div>
+      </div>
+      <div class="module" id="module-cosmos">
+        <div id="cosmos-info"></div>
+      </div>
+      <div class="module" id="module-companion">
+        <div id="companion-chat" style="display:flex; flex-direction:column; gap:10px; height:100%;">
+          <div id="companion-messages" style="flex:1; overflow-y:auto; border-radius:var(--radius); padding:12px; background:rgba(0,0,0,.3);"></div>
+          <div style="display:flex; gap:6px;">
+            <input type="text" id="companion-input" placeholder="Ask..." style="flex:1;">
+            <button class="content-btn" id="companion-send">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="right-panel">
+    <div class="right-panel-header">Context & Reference</div>
+    <div class="right-panel-content">
+      <div class="rp-section">
+        <div class="rp-label">Active Module</div>
+        <div id="rp-module-info" style="font-size:12px; color:var(--primary-yellow);">Character Agents</div>
+      </div>
+      <div class="rp-section">
+        <div class="rp-label">Alchemy Symbols</div>
+        <div style="font-size:11px; line-height:1.8;">
+          <div>☿ Mercury: communication</div>
+          <div>♀ Venus: ideas, capture</div>
+          <div>☉ Sun: truth, knowledge</div>
+          <div>☽ Moon: reflection, guide</div>
+        </div>
+      </div>
+      <div class="rp-section">
+        <div class="rp-label">Progress</div>
+        <div id="rp-progress">
+          <div class="rp-item">Agents: 4 loaded</div>
+          <div class="rp-item">Ideas: ready</div>
+          <div class="rp-item">Companion: online</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dock-footer">
+    <button class="dock-footer-btn" id="dock-save">SAVE</button>
+    <button class="dock-footer-btn" id="dock-sync">SYNC</button>
+    <div class="dock-footer-status">v2.0 Polyglot · Offline · #isukiri</div>
+  </div>
+</div>
+<script>
+const CHARACTER_AGENTS = {
+  kanji: [
+    { char: '愛', name: 'AI', script: 'Kanji', phonetic: 'ai', meaning: 'Love — universal binding force', etymology: 'Heart + to think' },
+    { char: '光', name: 'HIKARI', script: 'Kanji', phonetic: 'hikari', meaning: 'Light — illumination, truth revealed', etymology: 'Fire + to open' },
+  ],
+  runes: [
+    { char: 'ᚠ', name: 'FEHU', script: 'Rune', phonetic: 'feh', meaning: 'Cattle/Wealth — abundance', etymology: 'Indo-European *pek-' },
+  ]
+};
+let appState = { currentModule: 'agents', ideas: [] };
+function switchModule(moduleName) {
+  document.querySelectorAll('.module').forEach(m => m.classList.remove('active'));
+  document.getElementById(`module-${moduleName}`).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelector(`[data-module="${moduleName}"]`).classList.add('active');
+  const titles = { agents: 'Character Agents — All Scripts', ideas: 'Ideas Pad — Capture Knowledge', cosmos: 'Cosmos — Knowledge Connections', companion: 'Companion AI — Your Guide' };
+  document.getElementById('content-title').textContent = titles[moduleName] || 'Archive';
+  document.getElementById('rp-module-info').textContent = moduleName.toUpperCase();
+  appState.currentModule = moduleName;
+  localStorage.setItem('rai-state', JSON.stringify(appState));
+}
+function renderAgents() {
+  const list = document.getElementById('agents-list');
+  list.innerHTML = '';
+  Object.entries(CHARACTER_AGENTS).forEach(([scriptType, agents]) => {
+    agents.forEach(agent => {
+      const card = document.createElement('div');
+      card.className = 'agent-card';
+      card.innerHTML = `<div class="agent-char">${agent.char}</div><div class="agent-name">${agent.name}</div><div class="agent-phonetic">${agent.phonetic}</div><div class="agent-meaning">${agent.meaning}</div><span class="agent-script">${agent.script}</span><div style="font-size:10px;color:var(--text-dim);margin-top:8px;">Etymology: ${agent.etymology}</div>`;
+      list.appendChild(card);
+    });
+  });
+}
+function addIdea(text) { if (!text.trim()) return; appState.ideas.push({ id: Date.now(), text, created: new Date().toISOString() }); localStorage.setItem('rai-state', JSON.stringify(appState)); renderIdeas(); }
+function renderIdeas() { const list = document.getElementById('ideas-list'); list.innerHTML = appState.ideas.map(idea => `<div class="agent-card"><div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;">${new Date(idea.created).toLocaleString()}</div><div style="font-size:12px;color:var(--text-white);">${idea.text.replace(/\n/g,'<br>')}</div></div>`).join(''); }
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('rai-state'); if (saved) appState = JSON.parse(saved);
+  renderAgents(); renderIdeas();
+  document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => switchModule(btn.dataset.module)));
+  document.getElementById('idea-save').addEventListener('click', () => { const text = document.getElementById('idea-input').value; if (text.trim()) { addIdea(text); document.getElementById('idea-input').value = ''; } });
+  document.getElementById('companion-send').addEventListener('click', () => {
+    const input = document.getElementById('companion-input'); const text = input.value.trim(); if (!text) return;
+    const msgs = document.getElementById('companion-messages');
+    msgs.innerHTML += `<div style="margin-bottom:10px;padding:8px;background:rgba(212,160,48,.1);border-radius:3px;">YOU: ${text}</div>`;
+    input.value = '';
+    setTimeout(() => { msgs.innerHTML += `<div style="margin-bottom:10px;padding:8px;background:rgba(45,154,122,.1);border-radius:3px;">READY?: This is not a good time, I am sorry.</div>`; msgs.scrollTop = msgs.scrollHeight; }, 300);
+    msgs.scrollTop = msgs.scrollHeight;
+  });
+  document.getElementById('dock-sync').addEventListener('click', () => { localStorage.setItem('rai-sync', Date.now().toString()); alert('Synced'); });
+  document.getElementById('export-dock').addEventListener('click', () => { const html = document.documentElement.outerHTML; const blob = new Blob([html], { type: 'text/html' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'rai-archive-book.html'; a.click(); URL.revokeObjectURL(url); });
+});
+</script>
+</body>
+</html>

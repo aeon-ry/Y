@@ -11,7 +11,7 @@
             font-family: system-ui, -apple-system, sans-serif; 
             margin: 0; 
             padding: 20px; 
-            background: #ffffff; 
+            background: linear-gradient(135deg, #fdf7eb 0%, #eef4ff 100%); 
             color: #111111; 
             border: 4px solid #111; 
             min-height: 100vh;
@@ -53,11 +53,57 @@
             background: #111; 
             color: #fff; 
             border: none;
+            border-radius: 4px;
         }
         button:hover { background: #333; }
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            align-items: center;
+        }
+        .toolbar .status {
+            margin-left: auto;
+            font-size: 0.9rem;
+            color: #444;
+        }
+        nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        nav a {
+            color: #111;
+            text-decoration: none;
+            font-weight: bold;
+            border-bottom: 2px solid transparent;
+        }
+        nav a:hover,
+        nav a.active {
+            border-color: #111;
+        }
     </style>
 </head>
 <body>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="RAilingua.html">RAi Archive</a>
+        <a href="ninjastar.html" class="active">NinjaStar</a>
+        <a href="ry-rai-ri.html">RY/RAI/RI</a>
+        <a href="raios-v1.html">RAiOS v1.0</a>
+        <a href="kurai-edition.html">Kurai Edition</a>
+        <a href="kali-os.html">KALI OS</a>
+        <a href="raios-v4.html">RAiOS v4</a>
+        <a href="rai-archive.html">RAi Archive OS</a>
+    </nav>
+    <div class="toolbar">
+        <button onclick="insertTemplate()">Insert Template</button>
+        <button onclick="clearWorkspace()">Clear</button>
+        <button onclick="commitQuine()">Export HTML</button>
+        <div class="status" id="statusbar">Ready to draft</div>
+    </div>
     <header>
         <!-- The title is directly editable by clicking on it -->
         <div id="title" contenteditable="true">New Subject Blueprint</div>
@@ -71,10 +117,15 @@
 
     <footer>
         <button onclick="commitQuine()">Commit Snapshot</button>
+        <div style="margin-top: 8px; font-size: 0.9rem;">Use the links above to move between the main bootloader, archive, and study page.</div>
     </footer>
 
     <script>
-        // Retro logic: Simple, highly efficient clock script
+        const STORAGE_KEY = 'study-blueprint-state';
+        const titleEl = document.getElementById('title');
+        const workspaceEl = document.getElementById('workspace');
+        const statusEl = document.getElementById('statusbar');
+
         function updateClock() {
             const now = new Date();
             document.getElementById('clock').innerText = now.toLocaleString();
@@ -82,30 +133,78 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // The Quine mechanism: captures the DOM's exact state, including edits, and exports it
+        function updateStatus(message) {
+            if (statusEl) statusEl.textContent = message;
+        }
+
+        function saveState() {
+            const state = {
+                title: titleEl.innerText,
+                content: workspaceEl.innerHTML,
+                updated: new Date().toISOString()
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            updateStatus('Saved ' + new Date().toLocaleTimeString());
+        }
+
+        function loadState() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                if (saved) {
+                    if (saved.title) titleEl.innerText = saved.title;
+                    if (saved.content) workspaceEl.innerHTML = saved.content;
+                    updateStatus('Restored last draft');
+                }
+            } catch (e) {
+                updateStatus('Draft storage unavailable');
+            }
+        }
+
+        function insertTemplate() {
+            workspaceEl.innerHTML = `
+                <h2>Study Plan</h2>
+                <ul>
+                    <li>Goal: define the core objective</li>
+                    <li>Method: break the work into 3 steps</li>
+                    <li>Checkpoint: review progress at the end of the session</li>
+                </ul>
+                <p>Use this space to capture notes, concepts, and next actions.</p>
+            `;
+            saveState();
+        }
+
+        function clearWorkspace() {
+            workspaceEl.innerHTML = '<p>Start building out your study structure here...</p>';
+            titleEl.innerText = 'New Subject Blueprint';
+            saveState();
+        }
+
         function commitQuine() {
-            // Grab the entire HTML document as it currently sits in memory
             const currentHTML = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-            
-            // Create a blob representing the new file
             const blob = new Blob([currentHTML], {type: 'text/html'});
             const url = URL.createObjectURL(blob);
-            
-            // Generate a unique filename based on the current timestamp
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             const filename = `blueprint_${timestamp}.html`;
-            
-            // Trigger the download invisibly
             const a = document.createElement('a');
             a.href = url;
             a.download = filename;
             document.body.appendChild(a);
             a.click();
-            
-            // Clean up
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+            updateStatus('Exported blueprint');
         }
+
+        titleEl.addEventListener('input', saveState);
+        workspaceEl.addEventListener('input', saveState);
+        document.addEventListener('keydown', (event) => {
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+                event.preventDefault();
+                saveState();
+            }
+        });
+
+        loadState();
     </script>
 </body>
 </html>
