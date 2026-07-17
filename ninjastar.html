@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Blueprint</title>
+    <style>
+        /* Pure structural CSS. No fluff. */
+        * { box-sizing: border-box; }
+        body { 
+            font-family: system-ui, -apple-system, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: #ffffff; 
+            color: #111111; 
+            border: 4px solid #111; 
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header { 
+            display: flex; 
+            justify-content: space-between; 
+            border-bottom: 2px solid #111; 
+            padding-bottom: 10px; 
+            margin-bottom: 20px; 
+        }
+        #title { 
+            font-weight: bold; 
+            font-size: 1.5rem; 
+            outline: none; 
+            min-width: 200px;
+        }
+        #clock { 
+            font-variant-numeric: tabular-nums; 
+        }
+        main { 
+            flex-grow: 1; 
+            outline: none; 
+            line-height: 1.6;
+        }
+        footer { 
+            margin-top: 20px; 
+            border-top: 2px solid #111; 
+            padding-top: 10px; 
+            text-align: right;
+        }
+        button { 
+            font-family: inherit; 
+            font-weight: bold;
+            padding: 6px 12px; 
+            cursor: pointer; 
+            background: #111; 
+            color: #fff; 
+            border: none;
+        }
+        button:hover { background: #333; }
+    </style>
+</head>
+<body>
+    <header>
+        <!-- The title is directly editable by clicking on it -->
+        <div id="title" contenteditable="true">New Subject Blueprint</div>
+        <div id="clock">--:--:--</div>
+    </header>
+
+    <!-- The main workspace is directly editable -->
+    <main id="workspace" contenteditable="true">
+        Start building out your study structure here...
+    </main>
+
+    <footer>
+        <button onclick="commitQuine()">Commit Snapshot</button>
+    </footer>
+
+    <script>
+        // Retro logic: Simple, highly efficient clock script
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleString();
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // The Quine mechanism: captures the DOM's exact state, including edits, and exports it
+        function commitQuine() {
+            // Grab the entire HTML document as it currently sits in memory
+            const currentHTML = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            
+            // Create a blob representing the new file
+            const blob = new Blob([currentHTML], {type: 'text/html'});
+            const url = URL.createObjectURL(blob);
+            
+            // Generate a unique filename based on the current timestamp
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const filename = `blueprint_${timestamp}.html`;
+            
+            // Trigger the download invisibly
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            
+            // Clean up
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
