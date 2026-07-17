@@ -25,8 +25,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python3 ai-fixer.py
       
-      -
-name: Commit Changes
+      - name: Commit Changes
         run: |
           git config user.name "RAi-Bot"
           git config user.email "rai@candish.dev"
